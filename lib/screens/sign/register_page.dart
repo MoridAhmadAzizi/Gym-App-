@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
-import 'package:wahab/screens/sign/auth_service.dart';
+import 'package:wahab/services/auth_services.dart';
 import 'package:wahab/screens/sign/my_button.dart';
 import 'package:wahab/screens/sign/my_text_field.dart';
 import 'package:wahab/screens/sign/squre_tile.dart';
@@ -173,13 +173,13 @@ class _RegisterPageState extends State<RegisterPage> {
                         Logos.apple,
                         size: 28,
                       ),
-                      onTap: () => AuthService().signInWithGoogle(),
+                      onTap: () {}, // Apple ID - فعلاً خالی
                       text: 'Sign Up with your Apple ID',
                     ),
                     const SizedBox(height: 10),
                     SqureTile(
                       icon: Logo(Logos.google, size: 28),
-                      onTap: () {},
+                      onTap: () => AuthService().signInWithGoogle(),// اصلاح شد
                       text: 'Sign Up with your Google Account',
                     ),
                   ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wahab/model/product.dart';
 import 'package:wahab/model/tools.dart';
+import 'package:go_router/go_router.dart';
 
 class Detail extends StatefulWidget {
   final Product product;
@@ -275,10 +276,7 @@ class _DetailState extends State<Detail> {
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () {
-                  // Edit functionality
-                  // Navigator.push(context, MaterialPageRoute(
-                  //   builder: (context) => EditProductPage(product: widget.product),
-                  // ));
+                  context.push('/add', extra: widget.product);
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -289,7 +287,7 @@ class _DetailState extends State<Detail> {
                 ),
                 icon: const Icon(Icons.edit, color: Colors.white, size: 22),
                 label: const Text(
-                  'Edit Product',
+                  'Update item',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,

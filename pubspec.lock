@@ -560,14 +560,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
-  modal_bottom_sheet:
-    dependency: "direct main"
-    description:
-      name: modal_bottom_sheet
-      sha256: ef533916a2c3089571c32bd34e410faca77a6849a3f28f748e0794525c5658a0
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.2"
   nested:
     dependency: transitive
     description:
@@ -652,10 +644,10 @@ packages:
     dependency: "direct main"
     description:
       name: riverpod
-      sha256: "16ff608d21e8ea64364f2b7c049c94a02ab81668f78845862b6e88b71dd4935a"
+      sha256: "9026676260f31bb5279cc5e59ca292145d8bab4aabede9aa2555c2a626ec66f1"
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.0"
+    version: "3.2.0"
   shelf:
     dependency: transitive
     description:

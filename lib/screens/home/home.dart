@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/product_data.dart';
 import '../../model/product.dart';
 import '../../screens/detail/detail.dart';
@@ -25,7 +26,7 @@ class _HomeState extends State<Home> {
 
   void _initializeProducts() {
     try {
-      _allProducts = List<Product>.from(products);
+      _allProducts = products;
       _filteredProducts = List<Product>.from(_allProducts);
       print('Products loaded: ${_allProducts.length} items');
 
@@ -158,7 +159,9 @@ class _HomeState extends State<Home> {
               ),
             ),
             ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: () {
+                context.push('/add');
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black87,
                 foregroundColor: Colors.white,
@@ -279,12 +282,7 @@ class _HomeState extends State<Home> {
   }) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => Detail(product: product),
-          ),
-        );
+        context.push('/detail', extra: product);
       },
       child: Container(
         padding: const EdgeInsets.all(10),

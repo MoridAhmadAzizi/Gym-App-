@@ -1,14 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
-import 'package:wahab/screens/sign/auth_service.dart';
+import 'package:wahab/services/auth_services.dart';
 import 'package:wahab/screens/sign/my_button.dart';
 import 'package:wahab/screens/sign/my_text_field.dart';
 import 'package:wahab/screens/sign/squre_tile.dart';
 
 class LoginPage extends StatefulWidget {
   final Function()? onTap;
-  LoginPage({super.key, required this.onTap});
+const LoginPage({super.key, required this.onTap});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -19,11 +19,10 @@ class _LoginPageState extends State<LoginPage> {
   final passwordController = TextEditingController();
 
   void signUserIn() async {
-    // Show loading dialog
     showDialog(
       context: context,
       barrierDismissible:
-          false, // Prevent user from dismissing by tapping outside
+          false, 
       builder: (context) {
         return const Center(
           child: CircularProgressIndicator(),
@@ -37,13 +36,11 @@ class _LoginPageState extends State<LoginPage> {
         password: passwordController.text.trim(),
       );
 
-      // Close loading dialog
-      Navigator.pop(context);
+        Navigator.pop(context);
+    
     } on FirebaseAuthException catch (e) {
-      // Close loading dialog first
-      Navigator.pop(context);
-
-      // Show error message
+        Navigator.pop(context);
+  
       String errorMessage;
 
       switch (e.code) {
@@ -70,7 +67,6 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       // Close loading dialog
       Navigator.pop(context);
-
       // Show generic error
       showErrorMassage('ops:something happended:$e');
     }
@@ -88,7 +84,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             content: Text(
               message,
-              style: TextStyle(color: Colors.white, fontSize: 20),
+              style:const TextStyle(color: Colors.white, fontSize: 20),
               textAlign: TextAlign.center,
             ),
           ),
@@ -107,26 +103,26 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(height: 50),
-                Icon(Icons.lock, size: 100),
-                SizedBox(height: 50),
+               const SizedBox(height: 50),
+               const Icon(Icons.lock, size: 100),
+                const SizedBox(height: 50),
                 Text(
                   'Welcome Back you have been missed',
                   style: TextStyle(color: Colors.grey[700], fontSize: 16),
                 ),
-                SizedBox(height: 25),
+              const  SizedBox(height: 25),
                 MyTextField(
                   obsucreText: false,
                   hintText: 'Enter your username',
                   controller: usernameController,
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 MyTextField(
                   obsucreText: true,
                   hintText: 'Enter your password',
                   controller: passwordController,
                 ),
-                SizedBox(height: 10),
+               const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: Row(
@@ -139,21 +135,21 @@ class _LoginPageState extends State<LoginPage> {
                     ],
                   ),
                 ),
-                SizedBox(height: 25),
+               const SizedBox(height: 25),
                 MyButton(
                   onTap: signUserIn,
                   button: 'Sign In',
                 ),
-                SizedBox(height: 50),
+              const  SizedBox(height: 50),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 25.0),
+                  padding:const EdgeInsets.symmetric(horizontal: 25.0),
                   child: Row(
                     children: [
                       Expanded(
                         child: Divider(thickness: 0.5, color: Colors.grey[400]),
                       ),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 10.0),
+                        padding:const EdgeInsets.symmetric(horizontal: 10.0),
                         child: Text(
                           'Or Continue with',
                           style: TextStyle(color: Colors.grey[700]),

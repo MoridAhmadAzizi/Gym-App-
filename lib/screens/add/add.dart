@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:wahab/model/product.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:wahab/data/product_data.dart';
 
 class Add extends StatefulWidget {
-  const Add({super.key});
+  final Product? initialProduct;
+  const Add({super.key, this.initialProduct});
 
   @override
   State<Add> createState() => _AddState();
 }
 
 class _AddState extends State<Add> {
-  // Variables
   final List<String> _tags = [];
   final ImagePicker _picker = ImagePicker();
 
@@ -17,8 +20,12 @@ class _AddState extends State<Add> {
   String _selectedGroup = 'Group A';
   String _tagInput = '';
   String _description = '';
+  String _initialId = '';
 
   final List<String> _groups = ['Group A', 'Group B'];
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _tagController = TextEditingController();
   Future<void> _pickImages() async {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -33,6 +40,7 @@ class _AddState extends State<Add> {
       setState(() {
         _tags.add(_tagInput.trim());
         _tagInput = '';
+        _tagController.text = '';
       });
     }
   }
@@ -44,20 +52,38 @@ class _AddState extends State<Add> {
   }
 
   void _saveForm() {
+    _name = _nameController.text.trim();
+    _description = _descriptionController.text.trim();
+
     if (_name.isEmpty) {
       _showMessage('Please enter name');
       return;
     }
+    final id = _initialId.isNotEmpty
+        ? _initialId
+        : DateTime.now().millisecondsSinceEpoch.toString();
 
-    final data = {
-      'name': _name,
-      'group': _selectedGroup,
-      'tags': _tags,
-      'description': _description,
-    };
+    final newProduct = Product(
+      id: id,
+      title: _name,
+      group: _selectedGroup,
+      desc: _description,
+      tool: List<String>.from(_tags),
+      imageURL: ['assets/images/bg1.png'],
+    );
 
-    print('Saved Data: $data');
-    _showMessage('Item added successfully!');
+    if (widget.initialProduct != null) {
+      final idx = products.indexWhere((p) => p.id == id);
+      if (idx != -1) {
+        products[idx] = newProduct;
+      }
+      _showMessage('Item updated successfully!');
+    } else {
+      products.add(newProduct);
+      _showMessage('Item added successfully!');
+    }
+
+    context.pop();
   }
 
   void _resetForm() {
@@ -101,6 +127,7 @@ class _AddState extends State<Add> {
                     _buildTextField(
                       label: 'Name',
                       icon: Icons.badge_outlined,
+                      controller: _nameController,
                       onChanged: (value) => _name = value,
                       hint: 'Enter item name',
                     ),
@@ -112,6 +139,7 @@ class _AddState extends State<Add> {
                     _buildTextField(
                       label: 'Description',
                       icon: Icons.description_outlined,
+                      controller: _descriptionController,
                       onChanged: (value) => _description = value,
                       hint: 'Optional description',
                       maxLines: 1,
@@ -128,6 +156,31 @@ class _AddState extends State<Add> {
         ),
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialProduct != null) {
+      final p = widget.initialProduct!;
+      _initialId = p.id;
+      _name = p.title;
+      _selectedGroup = p.group;
+      _tags.clear();
+      _tags.addAll(p.tool);
+      _description = p.desc;
+      _nameController.text = _name;
+      _descriptionController.text = _description;
+      _tagController.text = '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _tagController.dispose();
+    super.dispose();
   }
 
   Widget _buildHeader() {
@@ -228,6 +281,7 @@ class _AddState extends State<Add> {
     required String label,
     required IconData icon,
     required Function(String) onChanged,
+    TextEditingController? controller,
     required String hint,
     int maxLines = 1,
   }) {
@@ -249,6 +303,7 @@ class _AddState extends State<Add> {
               borderRadius: BorderRadius.circular(7),
               border: BoxBorder.all(color: Colors.grey[300]!, width: 2)),
           child: TextField(
+            controller: controller,
             onChanged: onChanged,
             maxLines: maxLines,
             decoration: InputDecoration(
@@ -344,6 +399,7 @@ class _AddState extends State<Add> {
                     borderRadius: BorderRadius.circular(7),
                     border: BoxBorder.all(color: Colors.grey[300]!, width: 2)),
                 child: TextField(
+                  controller: _tagController,
                   onChanged: (value) => _tagInput = value,
                   onSubmitted: (_) => _addTag(),
                   decoration: InputDecoration(
@@ -426,7 +482,7 @@ class _AddState extends State<Add> {
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: _resetForm,
+            onPressed: () => context.pop(),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 18),
               shape: RoundedRectangleBorder(
@@ -456,9 +512,9 @@ class _AddState extends State<Add> {
               backgroundColor: Colors.grey,
               elevation: 0,
             ),
-            child: const Text(
-              'Add Item',
-              style: TextStyle(
+            child: Text(
+              widget.initialProduct != null ? 'Update Item' : 'Add Item',
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
