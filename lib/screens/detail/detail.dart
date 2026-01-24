@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:wahab/model/product.dart';
 import 'package:wahab/model/tools.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:io';
+import '../../data/product_data.dart';
 
 class Detail extends StatefulWidget {
   final Product product;
@@ -11,21 +13,23 @@ class Detail extends StatefulWidget {
 }
 
 class _DetailState extends State<Detail> {
+  late Product _product;
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
-    if (widget.product.imageURL.isNotEmpty) {
+    _product = widget.product;
+    if (_product.imageURL.isNotEmpty) {
       _startAutoPlay();
     }
   }
 
   void _startAutoPlay() {
     Future.delayed(const Duration(seconds: 5), () {
-      if (_pageController.hasClients && widget.product.imageURL.isNotEmpty) {
-        if (_currentPage < widget.product.imageURL.length - 1) {
+      if (_pageController.hasClients && _product.imageURL.isNotEmpty) {
+        if (_currentPage < _product.imageURL.length - 1) {
           _pageController.nextPage(
             duration: const Duration(milliseconds: 1000),
             curve: Curves.easeInOut,
@@ -46,8 +50,8 @@ class _DetailState extends State<Detail> {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> images = widget.product.imageURL.isNotEmpty
-        ? widget.product.imageURL
+    final List<String> images = _product.imageURL.isNotEmpty
+        ? _product.imageURL
         : ['assets/images/placeholder.png'];
 
     return Scaffold(
@@ -90,24 +94,45 @@ class _DetailState extends State<Detail> {
                         },
                         itemCount: images.length,
                         itemBuilder: (context, index) {
-                          return Image.asset(
-                            images[index],
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.grey[200],
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.image_not_supported,
-                                    size: 50,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
+                          final imagePath = images[index];
+                          final isAsset = imagePath.startsWith('assets/');
+                          return isAsset
+                              ? Image.asset(
+                                  imagePath,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey[200],
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.image_not_supported,
+                                          size: 50,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Image.file(
+                                  File(imagePath),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey[200],
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.image_not_supported,
+                                          size: 50,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
                         },
                       ),
                       if (images.length > 1)
@@ -140,7 +165,7 @@ class _DetailState extends State<Detail> {
 
               const SizedBox(height: 25),
               Text(
-                widget.product.title,
+                _product.title,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -157,7 +182,7 @@ class _DetailState extends State<Detail> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'ID: ${widget.product.id}',
+                    'ID: ${_product.id}',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[700],
@@ -182,7 +207,7 @@ class _DetailState extends State<Detail> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      widget.product.group,
+                      _product.group,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -204,7 +229,7 @@ class _DetailState extends State<Detail> {
               const SizedBox(height: 5),
               SizedBox(
                 child: Text(
-                  widget.product.desc,
+                  _product.desc,
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[700],
@@ -224,12 +249,12 @@ class _DetailState extends State<Detail> {
 
               const SizedBox(height: 10),
 
-              if (widget.product.tool.isNotEmpty)
+              if (_product.tool.isNotEmpty)
                 SizedBox(
                   child: Wrap(
                     spacing: 7,
                     runSpacing: 12,
-                    children: widget.product.tool.map((tool) {
+                    children: _product.tool.map((tool) {
                       return CardProduct(title: tool);
                     }).toList(),
                   ),
@@ -275,8 +300,19 @@ class _DetailState extends State<Detail> {
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () {
-                  context.push('/add', extra: widget.product);
+                onPressed: () async {
+                  final result = await context.push('/add', extra: _product);
+                  if (result == 'updated') {
+                    setState(() {
+                      try {
+                        _product =
+                            products.firstWhere((p) => p.id == _product.id);
+                      } catch (e) {
+                        // If not found, keep the current
+                      }
+                    });
+                    context.pop('updated_from_detail');
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),

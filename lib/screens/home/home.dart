@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/product_data.dart';
 import '../../model/product.dart';
 import '../../screens/detail/detail.dart';
+import 'dart:io';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -159,8 +160,11 @@ class _HomeState extends State<Home> {
               ),
             ),
             ElevatedButton.icon(
-              onPressed: () {
-                context.push('/add');
+              onPressed: () async {
+                final result = await context.push('/add');
+                if (result == 'added' || result == 'updated') {
+                  setState(() {});
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black87,
@@ -262,9 +266,11 @@ class _HomeState extends State<Home> {
           } else {
             imagePath = 'assets/images/bg1.png';
           }
+          bool isAsset = imagePath.startsWith('assets/');
 
           return _ImageCard(
             imagePath: imagePath,
+            isAsset: isAsset,
             title: product.title,
             description: product.group,
             product: product,
@@ -276,13 +282,17 @@ class _HomeState extends State<Home> {
 
   Widget _ImageCard({
     required String imagePath,
+    required bool isAsset,
     required String title,
     required String description,
     required Product product,
   }) {
     return GestureDetector(
-      onTap: () {
-        context.push('/detail', extra: product);
+      onTap: () async {
+        final result = await context.push('/detail', extra: product);
+        if (result == 'updated_from_detail') {
+          setState(() {});
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(10),
@@ -318,12 +328,19 @@ class _HomeState extends State<Home> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(7),
-                    child: Image.asset(
-                      imagePath,
-                      width: 70,
-                      height: 70,
-                      fit: BoxFit.cover,
-                    ),
+                    child: isAsset
+                        ? Image.asset(
+                            imagePath,
+                            width: 70,
+                            height: 70,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.file(
+                            File(imagePath),
+                            width: 70,
+                            height: 70,
+                            fit: BoxFit.cover,
+                          ),
                   ),
                 ),
                 const SizedBox(width: 10),

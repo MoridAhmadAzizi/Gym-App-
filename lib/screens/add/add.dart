@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:wahab/model/product.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:wahab/data/product_data.dart';
+import 'dart:io';
 
 class Add extends StatefulWidget {
   final Product? initialProduct;
@@ -15,6 +16,7 @@ class Add extends StatefulWidget {
 class _AddState extends State<Add> {
   final List<String> _tags = [];
   final ImagePicker _picker = ImagePicker();
+  List<String> _imagePaths = [];
 
   String _name = '';
   String _selectedGroup = 'Group A';
@@ -27,12 +29,12 @@ class _AddState extends State<Add> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _tagController = TextEditingController();
   Future<void> _pickImages() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Image picker would open here'),
-        duration: Duration(seconds: 1),
-      ),
-    );
+    final List<XFile> images = await _picker.pickMultiImage();
+    if (images.isNotEmpty) {
+      setState(() {
+        _imagePaths = images.map((e) => e.path).toList();
+      });
+    }
   }
 
   void _addTag() {
@@ -54,22 +56,28 @@ class _AddState extends State<Add> {
   void _saveForm() {
     _name = _nameController.text.trim();
     _description = _descriptionController.text.trim();
-
     if (_name.isEmpty) {
       _showMessage('Please enter name');
       return;
     }
     final id = _initialId.isNotEmpty
         ? _initialId
-        : DateTime.now().millisecondsSinceEpoch.toString();
-
+        : (() {
+            int maxId = products.isNotEmpty
+                ? products
+                    .map((p) => int.tryParse(p.id) ?? 0)
+                    .reduce((a, b) => a > b ? a : b)
+                : 0;
+            return (maxId + 1).toString();
+          })();
     final newProduct = Product(
       id: id,
       title: _name,
       group: _selectedGroup,
       desc: _description,
       tool: List<String>.from(_tags),
-      imageURL: ['assets/images/bg1.png'],
+      imageURL:
+          _imagePaths.isNotEmpty ? _imagePaths : ['assets/images/bg1.png'],
     );
 
     if (widget.initialProduct != null) {
@@ -83,7 +91,7 @@ class _AddState extends State<Add> {
       _showMessage('Item added successfully!');
     }
 
-    context.pop();
+    context.pop(widget.initialProduct != null ? 'updated' : 'added');
   }
 
   void _resetForm() {
@@ -169,6 +177,7 @@ class _AddState extends State<Add> {
       _tags.clear();
       _tags.addAll(p.tool);
       _description = p.desc;
+      _imagePaths = List.from(p.imageURL);
       _nameController.text = _name;
       _descriptionController.text = _description;
       _tagController.text = '';
@@ -233,19 +242,36 @@ class _AddState extends State<Add> {
         ),
         child: Column(
           children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.cloud_upload_outlined,
-                size: 40,
-                color: Colors.grey,
-              ),
-            ),
+            _imagePaths.isNotEmpty
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: _imagePaths[0].startsWith('assets/')
+                        ? Image.asset(
+                            _imagePaths[0],
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.file(
+                            File(_imagePaths[0]),
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
+                  )
+                : Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.cloud_upload_outlined,
+                      size: 40,
+                      color: Colors.grey,
+                    ),
+                  ),
             const SizedBox(height: 16),
             const Text(
               'Upload Images',

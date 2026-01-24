@@ -9,8 +9,6 @@ class AuthService {
   Future<User?> signInWithGoogle() async {
     try {
       print('Starting Google Sign-In...');
-
-      // Trigger Google Sign-In flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
