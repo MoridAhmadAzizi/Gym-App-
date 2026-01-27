@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:wahab/model/product.dart';
-import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:wahab/model/product.dart';
 import 'package:wahab/services/product_repo.dart';
 
 class Add extends StatefulWidget {
@@ -29,15 +29,50 @@ class _AddState extends State<Add> {
 
   bool _isSaving = false;
 
+  // ----------------------------
+  // Images
+  // ----------------------------
   Future<void> _pickImages() async {
     final List<XFile> images = await _picker.pickMultiImage();
-    if (images.isNotEmpty) {
-      setState(() {
-        _imagePaths = images.map((e) => e.path).toList();
-      });
-    }
+    if (images.isEmpty) return;
+
+    setState(() {
+      for (final img in images) {
+        final p = img.path;
+        if (_imagePaths.length >= 10) break;
+        if (!_imagePaths.contains(p)) {
+          _imagePaths.add(p);
+        }
+      }
+    });
   }
 
+  void _removeImageAt(int index) {
+    setState(() {
+      if (index >= 0 && index < _imagePaths.length) {
+        _imagePaths.removeAt(index);
+      }
+    });
+  }
+
+  String _normalizeFilePath(String path) {
+    if (path.startsWith('file://')) return path.replaceFirst('file://', '');
+    return path;
+  }
+
+  Widget _buildImageThumb(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return Image.network(path, fit: BoxFit.cover);
+    }
+    if (path.startsWith('assets/')) {
+      return Image.asset(path, fit: BoxFit.cover);
+    }
+    return Image.file(File(_normalizeFilePath(path)), fit: BoxFit.cover);
+  }
+
+  // ----------------------------
+  // Tags
+  // ----------------------------
   void _addTag() {
     if (_tagInput.trim().isNotEmpty) {
       setState(() {
@@ -63,18 +98,6 @@ class _AddState extends State<Add> {
     );
   }
 
-  void _resetForm() {
-    setState(() {
-      _selectedGroup = 'Group A';
-      _tags.clear();
-      _tagInput = '';
-      _imagePaths.clear();
-      _nameController.clear();
-      _descriptionController.clear();
-      _tagController.clear();
-    });
-  }
-
   Future<void> _saveForm() async {
     if (_isSaving) return;
 
@@ -90,9 +113,7 @@ class _AddState extends State<Add> {
     setState(() => _isSaving = true);
 
     try {
-      final String productId = isEdit
-          ? widget.initialProduct!.id
-          : "";
+      final String productId = isEdit ? widget.initialProduct!.id : "";
 
       final product = Product(
         id: productId,
@@ -100,10 +121,10 @@ class _AddState extends State<Add> {
         group: _selectedGroup,
         desc: desc,
         tool: List<String>.from(_tags),
-        imageURL: _imagePaths.isNotEmpty ? _imagePaths : ['assets/images/bg1.png'],
+        imageURL:
+            _imagePaths.isNotEmpty ? List<String>.from(_imagePaths) : ['assets/images/bg1.png'],
       );
 
-      // ✅ فقط یکی از این‌ها اجرا شود
       if (isEdit) {
         await ProductRepo.instance.updateProduct(product);
         if (!mounted) return;
@@ -127,20 +148,27 @@ class _AddState extends State<Add> {
     }
   }
 
-
   @override
   void initState() {
     super.initState();
 
-    // اگر خواستی بعداً update هم اضافه می‌کنیم
+    // Update mode: preload fields
     if (widget.initialProduct != null) {
       final p = widget.initialProduct!;
       _nameController.text = p.title;
       _selectedGroup = p.group;
-      _tags.clear();
-      _tags.addAll(p.tool);
+
+      _tags
+        ..clear()
+        ..addAll(p.tool);
+
       _descriptionController.text = p.desc;
-      _imagePaths = List.from(p.imageURL);
+
+      // preload images (can be asset/network/file paths)
+      _imagePaths = List<String>.from(p.imageURL);
+      if (_imagePaths.length > 10) {
+        _imagePaths = _imagePaths.take(10).toList();
+      }
     }
   }
 
@@ -152,168 +180,223 @@ class _AddState extends State<Add> {
     super.dispose();
   }
 
+  // ----------------------------
+  // UI
+  // ----------------------------
   @override
   Widget build(BuildContext context) {
+    final isEdit = widget.initialProduct != null;
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 32),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(isEdit: isEdit),
+              const SizedBox(height: 24),
 
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _buildImageCard(),
-                    const SizedBox(height: 24),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildImageCard(),
+                      const SizedBox(height: 24),
 
-                    _buildTextField(
-                      label: 'Name',
-                      icon: Icons.badge_outlined,
-                      controller: _nameController,
-                      hint: 'Enter item name',
-                    ),
+                      _buildTextField(
+                        label: 'Name',
+                        icon: Icons.badge_outlined,
+                        controller: _nameController,
+                        hint: 'Enter item name',
+                      ),
 
-                    const SizedBox(height: 20),
-                    _buildGroupSelector(),
+                      const SizedBox(height: 20),
+                      _buildGroupSelector(),
 
-                    const SizedBox(height: 20),
-                    _buildTagsSection(),
+                      const SizedBox(height: 20),
+                      _buildTagsSection(),
 
-                    const SizedBox(height: 20),
-                    _buildTextField(
-                      label: 'Description',
-                      icon: Icons.description_outlined,
-                      controller: _descriptionController,
-                      hint: 'Optional description',
-                      maxLines: 1,
-                    ),
+                      const SizedBox(height: 20),
+                      _buildTextField(
+                        label: 'Description',
+                        icon: Icons.description_outlined,
+                        controller: _descriptionController,
+                        hint: 'Optional description',
+                        maxLines: 2,
+                      ),
 
-                    const SizedBox(height: 40),
-                  ],
+                      const SizedBox(height: 40),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // Buttons
-            _buildActionButtons(),
-          ],
+              _buildActionButtons(isEdit: isEdit),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildHeader({required bool isEdit}) {
+    return Row(
       children: [
-        Row(
+        IconButton(
+          onPressed: _isSaving ? null : () => context.pop(),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Upload New Item',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Fill in the details below',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
+            Text(
+              isEdit ? 'Update Item' : 'Upload New Item',
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Fill in the details below',
+              style: TextStyle(color: Colors.grey, fontSize: 14),
             ),
           ],
         ),
       ],
     );
   }
-
+  
   Widget _buildImageCard() {
-    return GestureDetector(
-      onTap: _pickImages,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(7),
-          border: Border.all(
-            color: Colors.grey.shade200,
-            width: 1.5,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: Colors.grey.shade200, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row
+          Row(
+            children: [
+              const Text(
+                'Images',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${_imagePaths.length}/10',
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+              const SizedBox(width: 10),
+              ElevatedButton.icon(
+                onPressed: (_imagePaths.length >= 10) ? null : _pickImages,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey.shade800,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                ),
+                icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
+                label: Text(_imagePaths.isEmpty ? 'Select' : 'Add more'),
+              ),
+            ],
           ),
-        ),
-        child: Column(
-          children: [
-            _imagePaths.isNotEmpty
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: _imagePaths[0].startsWith('assets/')
-                        ? Image.asset(
-                            _imagePaths[0],
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.file(
-                            File(_imagePaths[0]),
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
+          const SizedBox(height: 12),
+
+          // Content
+          if (_imagePaths.isEmpty)
+            GestureDetector(
+              onTap: _pickImages,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 22),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child:const Column(
+                  children: [
+                    Icon(Icons.cloud_upload_outlined, size: 42, color: Colors.grey),
+                    SizedBox(height: 10),
+                    Text(
+                      'Tap to select up to 10 images',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            SizedBox(
+              height: 96,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _imagePaths.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  final path = _imagePaths[index];
+                  return SizedBox(
+                    width: 96,
+                    height: 96,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            color: Colors.grey.shade100,
+                            child: SizedBox.expand(child: _buildImageThumb(path)),
                           ),
-                  )
-                : Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      shape: BoxShape.circle,
+                        ),
+                        Positioned(
+                          top: -10,
+                          right: -10,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _removeImageAt(index),
+                              borderRadius: BorderRadius.circular(999),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.65),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    child: const Icon(
-                      Icons.cloud_upload_outlined,
-                      size: 40,
-                      color: Colors.grey,
-                    ),
-                  ),
-            const SizedBox(height: 16),
-            const Text(
-              'Upload Images',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                  );
+                },
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Click to select multiple images',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Only images allowed',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
+
+          const SizedBox(height: 10),
+          const Text(
+            'Images will be kept in selected order. Tap × to remove.',
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+        ],
       ),
     );
   }
@@ -355,7 +438,7 @@ class _AddState extends State<Add> {
               ),
               filled: true,
               fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
           ),
         ),
@@ -388,10 +471,7 @@ class _AddState extends State<Add> {
             isExpanded: true,
             underline: const SizedBox(),
             icon: const Icon(Icons.expand_more, color: Colors.grey),
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
-            ),
+            style: const TextStyle(fontSize: 16, color: Colors.black87),
             items: _groups.map((String group) {
               return DropdownMenuItem<String>(
                 value: group,
@@ -403,9 +483,7 @@ class _AddState extends State<Add> {
             }).toList(),
             onChanged: (newValue) {
               if (newValue != null) {
-                setState(() {
-                  _selectedGroup = newValue;
-                });
+                setState(() => _selectedGroup = newValue);
               }
             },
           ),
@@ -450,10 +528,7 @@ class _AddState extends State<Add> {
                     ),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 0,
-                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
                 ),
               ),
@@ -461,7 +536,7 @@ class _AddState extends State<Add> {
             const SizedBox(width: 12),
             Container(
               decoration: BoxDecoration(
-                color: Colors.grey,
+                color: Colors.grey.shade800,
                 borderRadius: BorderRadius.circular(7),
               ),
               child: IconButton(
@@ -479,10 +554,7 @@ class _AddState extends State<Add> {
             runSpacing: 10,
             children: List.generate(_tags.length, (index) {
               return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(7),
@@ -501,11 +573,7 @@ class _AddState extends State<Add> {
                     const SizedBox(width: 6),
                     GestureDetector(
                       onTap: () => _removeTag(index),
-                      child: Icon(
-                        Icons.close,
-                        size: 16,
-                        color: Colors.grey.shade700,
-                      ),
+                      child: Icon(Icons.close, size: 16, color: Colors.grey.shade700),
                     ),
                   ],
                 ),
@@ -517,7 +585,7 @@ class _AddState extends State<Add> {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons({required bool isEdit}) {
     return Row(
       children: [
         Expanded(
@@ -525,9 +593,7 @@ class _AddState extends State<Add> {
             onPressed: _isSaving ? null : () => context.pop(),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 18),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(7),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
               side: BorderSide(color: Colors.grey.shade300),
             ),
             child: const Text(
@@ -546,23 +612,18 @@ class _AddState extends State<Add> {
             onPressed: _isSaving ? null : _saveForm,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 18),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(7),
-              ),
-              backgroundColor: Colors.grey,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+              backgroundColor: Colors.grey.shade800,
               elevation: 0,
             ),
             child: _isSaving
                 ? const SizedBox(
                     width: 22,
                     height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: Colors.white,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
                   )
                 : Text(
-                    widget.initialProduct != null ? 'Update Item' : 'Add Item',
+                    isEdit ? 'Update Item' : 'Add Item',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

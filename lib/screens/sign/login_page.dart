@@ -76,23 +76,11 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void showErrorMassage(String message) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Center(
-          child: AlertDialog(
-            backgroundColor: Colors.deepPurple,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            content: Text(
-              message,
-              style: const TextStyle(color: Colors.white, fontSize: 20),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        );
-      },
+     ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade600,
+      ),
     );
   }
 
