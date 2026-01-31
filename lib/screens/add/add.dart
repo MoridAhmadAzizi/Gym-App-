@@ -29,6 +29,17 @@ class _AddState extends State<Add> {
 
   bool _isSaving = false;
 
+  // ✅ ریست کامل فرم (برای Cancel مخصوصاً)
+  void _resetForm() {
+    _nameController.clear();
+    _descriptionController.clear();
+    _tagController.clear();
+    _tagInput = '';
+    _tags.clear();
+    _imagePaths = [];
+    _selectedGroup = 'گروپ اول';
+  }
+
   // ----------------------------
   // Images
   // ----------------------------
@@ -165,11 +176,13 @@ class _AddState extends State<Add> {
 
       _descriptionController.text = p.desc;
 
-      // preload images (can be asset/network/file paths)
       _imagePaths = List<String>.from(p.imageURL);
       if (_imagePaths.length > 10) {
         _imagePaths = _imagePaths.take(10).toList();
       }
+    } else {
+      // ✅ اگر حالت افزودن جدید باشد، مطمئن شو فرم تمیز است
+      _resetForm();
     }
   }
 
@@ -181,9 +194,6 @@ class _AddState extends State<Add> {
     super.dispose();
   }
 
-  // ----------------------------
-  // UI
-  // ----------------------------
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.initialProduct != null;
@@ -208,10 +218,9 @@ class _AddState extends State<Add> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              child:
-               Padding(
-                 padding: const EdgeInsets.all(20),
-                 child: Column(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
                   children: [
                     _buildImageCard(),
                     const SizedBox(height: 24),
@@ -235,8 +244,8 @@ class _AddState extends State<Add> {
                     ),
                     const SizedBox(height: 40),
                   ],
-                               ),
-               ),
+                ),
+              ),
             ),
           ),
           _buildActionButtons(isEdit: isEdit),
@@ -257,7 +266,6 @@ class _AddState extends State<Add> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
           Row(
             children: [
               const Text(
@@ -279,10 +287,8 @@ class _AddState extends State<Add> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey.shade800,
                   elevation: 0,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(7)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
                 ),
                 icon: const Icon(
                   Icons.add_photo_alternate_outlined,
@@ -297,7 +303,6 @@ class _AddState extends State<Add> {
             ],
           ),
           const SizedBox(height: 12),
-
           if (_imagePaths.isEmpty)
             GestureDetector(
               onTap: _pickImages,
@@ -311,8 +316,7 @@ class _AddState extends State<Add> {
                 ),
                 child: const Column(
                   children: [
-                    Icon(Icons.cloud_upload_outlined,
-                        size: 42, color: Colors.grey),
+                    Icon(Icons.cloud_upload_outlined, size: 42, color: Colors.grey),
                     SizedBox(height: 10),
                     Text(
                       'حد مجاز برای انتخاب عکس الی 10 عدد.',
@@ -341,8 +345,7 @@ class _AddState extends State<Add> {
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
                             color: Colors.grey.shade100,
-                            child:
-                                SizedBox.expand(child: _buildImageThumb(path)),
+                            child: SizedBox.expand(child: _buildImageThumb(path)),
                           ),
                         ),
                         Positioned(
@@ -416,8 +419,7 @@ class _AddState extends State<Add> {
               ),
               filled: true,
               fillColor: Colors.white,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
           ),
         ),
@@ -506,8 +508,7 @@ class _AddState extends State<Add> {
                     ),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
                 ),
               ),
@@ -532,8 +533,7 @@ class _AddState extends State<Add> {
             runSpacing: 10,
             children: List.generate(_tags.length, (index) {
               return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(7),
@@ -552,8 +552,7 @@ class _AddState extends State<Add> {
                     const SizedBox(width: 6),
                     GestureDetector(
                       onTap: () => _removeTag(index),
-                      child: Icon(Icons.close,
-                      size: 16, color: Colors.grey[900]),
+                      child: Icon(Icons.close, size: 16, color: Colors.grey[900]),
                     ),
                   ],
                 ),
@@ -566,37 +565,41 @@ class _AddState extends State<Add> {
   }
 
   Widget _buildActionButtons({required bool isEdit}) {
-    return 
-    Container(
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withAlpha(80),
-              blurRadius: 10,
-              offset: const Offset(0, -1),
-            ),
-          ],
-        ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withAlpha(80),
+            blurRadius: 10,
+            offset: const Offset(0, -1),
+          ),
+        ],
+      ),
       child: Row(
-        children:
-         [
+        children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: _isSaving ? null : () => context.pop(),
+              onPressed: _isSaving
+                  ? null
+                  : () {
+                      // ✅ پاک کردن کامل فیلدها روی Cancel
+                      setState(() => _resetForm());
+                      context.pop('cancelled');
+                    },
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(7)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
                 side: BorderSide(color: Colors.grey.shade300),
               ),
               child: const Text(
                 'لغو کردن',
                 style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
               ),
             ),
           ),
@@ -606,8 +609,7 @@ class _AddState extends State<Add> {
               onPressed: _isSaving ? null : _saveForm,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(7)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
                 backgroundColor: Colors.grey[900],
                 elevation: 0,
               ),
@@ -615,8 +617,7 @@ class _AddState extends State<Add> {
                   ? const SizedBox(
                       width: 22,
                       height: 22,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2.5, color: Colors.white),
+                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
                     )
                   : Text(
                       isEdit ? 'آپدیت محصول' : 'افزودن محصول',

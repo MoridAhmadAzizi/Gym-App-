@@ -23,7 +23,7 @@ void main() async {
 
   final ob = await ObjectBoxApp.create();
   Get.put<ObjectBoxApp>(ob);
-  
+
   Get.put(ProductRepo());
   runApp(const MyApp());
 }
@@ -88,7 +88,7 @@ class MyApp extends StatelessWidget {
               ),
             );
           }
-          
+
           if (snapshot.connectionState == ConnectionState.waiting) {
             return createRtlMaterialApp(
               home: const Scaffold(
@@ -98,7 +98,7 @@ class MyApp extends StatelessWidget {
               ),
             );
           }
-          
+
           if (snapshot.hasData) {
             final GoRouter router = GoRouter(
               routes: [
@@ -109,8 +109,8 @@ class MyApp extends StatelessWidget {
                 GoRoute(
                   path: '/add',
                   builder: (context, state) {
-                    final extra = state.extra;
-                    return Add(initialProduct: extra as Product?);
+                    final p = state.extra as Product?;
+                    return Add(initialProduct: p);
                   },
                 ),
                 GoRoute(
