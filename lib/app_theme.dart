@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-/// تم روشن‌تر و شادتر (جایگزین مشکی/خاکستری).
 class AppTheme {
   static ThemeData light() {
     final cs = ColorScheme.fromSeed(

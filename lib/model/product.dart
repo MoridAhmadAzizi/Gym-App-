@@ -22,7 +22,6 @@ class Product {
     this.createdAt,
     this.updatedAt,
   });
-
   Product copyWith({
     String? id,
     String? title,
@@ -44,18 +43,14 @@ class Product {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
-
   static DateTime? _parseDate(dynamic v) {
     if (v == null) return null;
     if (v is DateTime) return v;
     final s = v.toString();
     return DateTime.tryParse(s);
   }
-
   factory Product.fromMap(Map<String, dynamic> map) => Product.fromJson(map);
-
   Map<String, dynamic> toMap() => toJson();
-
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -64,7 +59,6 @@ class Product {
       'desc': desc,
       'tool': tool,
       'imageURL': imageURL,
-      // برای نوشتن به DB معمولاً لازم نیست ارسال شود، ولی برای کش محلی مفید است.
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };

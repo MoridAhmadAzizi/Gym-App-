@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:wahab/model/product.dart';
+import 'package:wahab/objectbox.g.dart';
 import 'package:wahab/services/auth_cubit.dart';
 import 'package:wahab/services/product_cubit.dart';
 
@@ -114,6 +115,7 @@ class _HomeState extends State<Home> {
 
         return Scaffold(
           appBar: AppBar(
+            backgroundColor: Theme.of(context).primaryColor.withAlpha(220),
             title: const Text('لیست محصولات'),
           ),
           drawer: const _NavigationDrawer(),
@@ -304,7 +306,7 @@ class _ProductCard extends StatelessWidget {
     final image =
         (product.imageURL.isNotEmpty && product.imageURL.first.isNotEmpty)
             ? product.imageURL.first
-            : 'assets/images/product.png';
+            : 'assets/images/avatar.png';
 
     return InkWell(
       onTap: () => context.push('/detail', extra: product),
@@ -315,16 +317,16 @@ class _ProductCard extends StatelessWidget {
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
                 child: Container(
+                  padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
                     border: Border.all(width: 1, color: Colors.grey),
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-
+                  color: Theme.of(context).colorScheme.primary.withAlpha(40),
                   ),
                   width: 56,
                   height: 56,
-                  child: _Thumb(image: image, isOnline: pState.isOnline),
+                  child: Image.asset('assets/images/avatar.png'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -406,6 +408,7 @@ class _NavigationDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -425,13 +428,15 @@ class _NavigationDrawer extends StatelessWidget {
     final role = state.profile?.role ?? 'user';
 
     return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor.withAlpha(200)
+      ),
       padding: const EdgeInsets.all(16),
-      color: Theme.of(context).colorScheme.primary,
       child: Row(
         children: [
           const CircleAvatar(
             radius: 26,
-            backgroundImage: AssetImage('assets/images/product.png'),
+            backgroundImage: AssetImage('assets/images/user.png'),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -490,8 +495,10 @@ class _NavigationDrawer extends StatelessWidget {
             },
           ),
         ListTile(
-          leading: const Icon(Icons.logout),
-          title: const Text('خروج'),
+          leading: Icon(Icons.logout, color: Colors.red[600],),
+          title: Text('خروج', style: TextStyle(
+              color: Colors.red[600]
+          ),),
           onTap: () async {
             Navigator.pop(context);
             await context.read<AuthCubit>().signOut();

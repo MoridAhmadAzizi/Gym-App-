@@ -16,7 +16,7 @@ import 'package:wahab/services/auth_services.dart';
 import 'package:wahab/services/product_cubit.dart';
 import 'package:wahab/services/product_repo.dart';
 import 'package:wahab/services/profile_repo.dart';
-import 'package:wahab/services/supabase_config.dart';
+import 'package:wahab/supabase_config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -1,7 +1,7 @@
 class Profile {
-  final String id; // uuid
+  final String id;
   final String email;
-  final String role; // user | admin | super_admin
+  final String role;
   final bool isActive;
 
   const Profile({
@@ -10,9 +10,7 @@ class Profile {
     required this.role,
     required this.isActive,
   });
-
   String get roleNormalized => role.trim().toLowerCase();
-
   bool get isSuperAdmin => roleNormalized == 'super_admin';
   bool get isAdmin => roleNormalized == 'admin' || roleNormalized == 'super_admin';
 

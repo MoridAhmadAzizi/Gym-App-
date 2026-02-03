@@ -118,7 +118,7 @@ class Detail extends StatelessWidget {
     if (imgs.isEmpty) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: Image.asset('assets/images/product.png', height: 220,width: MediaQuery.of(context).size.width, fit: BoxFit.cover),
+        child: Image.asset('assets/images/product.png', height: 220,width: double.infinity)
       );
     }
 

@@ -14,7 +14,7 @@ import 'package:wahab/objectbox/objectbox.dart';
 import 'package:wahab/objectbox/product_entity.dart';
 import 'package:wahab/objectbox/product_image_entity.dart';
 import 'package:wahab/services/image_utils.dart';
-import 'package:wahab/services/supabase_config.dart';
+import 'package:wahab/supabase_config.dart';
 
 /// ریپو برای محصولات: Sync با Supabase + کش آفلاین در ObjectBox
 class ProductRepo {
