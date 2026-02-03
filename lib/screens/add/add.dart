@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:wahab/model/product.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wahab/services/auth_cubit.dart';
+import 'package:wahab/services/product_cubit.dart';
 import 'package:wahab/services/product_repo.dart';
 
 class Add extends StatefulWidget {
@@ -121,6 +124,19 @@ class _AddState extends State<Add> {
       return;
     }
 
+    final isOnline = context.read<ProductCubit>().state.isOnline;
+    if (!isOnline) {
+      _showMessage('برای افزودن/ویرایش باید آنلاین باشید.', success: false);
+      return;
+    }
+
+    final session = context.read<AuthCubit>().state.session;
+    final userId = session?.user.id;
+    if (userId == null) {
+      _showMessage('ابتدا وارد حساب شوید.', success: false);
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     try {
@@ -137,15 +153,17 @@ class _AddState extends State<Add> {
             : ['assets/images/product.png'],
       );
 
+      final repo = context.read<ProductRepo>();
+
       if (isEdit) {
-        await ProductRepo.instance.updateProduct(product);
+        await repo.updateProduct(product: product, userId: userId);
         if (!mounted) return;
         _showMessage("محصول موفقانه ویرایش شد!", success: true);
         await Future.delayed(const Duration(milliseconds: 300));
         if (!mounted) return;
         context.pop("updated");
       } else {
-        await ProductRepo.instance.addproduct(product);
+        await repo.addProduct(draft: product, userId: userId);
         if (!mounted) return;
         _showMessage("محصول موفقانه اضافه شد!", success: true);
         await Future.delayed(const Duration(milliseconds: 300));

@@ -1,31 +1,42 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:objectbox/objectbox.dart' as obx;
+import 'package:path/path.dart' as p;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wahab/model/product.dart';
 import 'package:wahab/objectbox.g.dart';
 import 'package:wahab/objectbox/objectbox.dart';
 import 'package:wahab/objectbox/product_entity.dart';
+import 'package:wahab/objectbox/product_image_entity.dart';
+import 'package:wahab/services/image_utils.dart';
+import 'package:wahab/services/supabase_config.dart';
 
-class ProductRepo extends GetxController {
-  static ProductRepo get instance => Get.find();
-
-  final _db = FirebaseFirestore.instance;
-  final ObjectBoxApp _ob = Get.find<ObjectBoxApp>();
-
-  final RxBool isOnline = true.obs;
-
-  StreamSubscription<List<ConnectivityResult>>? _connSub;
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _fsSub;
-
-  @override
-  void onInit() {
-    super.onInit();
+/// ریپو برای محصولات: Sync با Supabase + کش آفلاین در ObjectBox
+class ProductRepo {
+  ProductRepo({
+    required SupabaseClient client,
+    required ObjectBoxApp objectBox,
+  })  : _client = client,
+        _ob = objectBox {
     _initConnectivity();
   }
 
-  void _initConnectivity() async {
+  final SupabaseClient _client;
+  final ObjectBoxApp _ob;
+
+  final ValueNotifier<bool> isOnline = ValueNotifier<bool>(true);
+  StreamSubscription<List<ConnectivityResult>>? _connSub;
+  RealtimeChannel? _channel;
+
+  // -------------------------
+  // Connectivity
+  // -------------------------
+  Future<void> _initConnectivity() async {
     final results = await Connectivity().checkConnectivity();
     _setOnlineFromResults(results);
 
@@ -37,151 +48,264 @@ class ProductRepo extends GetxController {
   void _setOnlineFromResults(List<ConnectivityResult> results) {
     final online = !results.contains(ConnectivityResult.none);
     isOnline.value = online;
-
     if (online) {
-      _startFirestoreSync();
+      unawaited(syncFromRemote());
+      _startRealtime();
     } else {
-      _stopFirestoreSync();
+      _stopRealtime();
     }
   }
 
-  void _startFirestoreSync() {
-    if (_fsSub != null) return;
-
-    _fsSub = _db.collection("products").snapshots().listen((snapshot) {
-      final entities = snapshot.docs.map((doc) {
-        final data = doc.data();
-        data["id"] = doc.id;
-        final p = Product.fromJson(data);
-        return ProductEntity.fromProduct(p);
-      }).toList();
-      _ob.store.runInTransaction(TxMode.write, () {
-        _ob.productBox.removeAll();
-        _ob.productBox.putMany(entities);
-      });
-    });
-  }
-
-  void _stopFirestoreSync() async {
-    await _fsSub?.cancel();
-    _fsSub = null;
-  }
-
+  // -------------------------
+  // Watch local cache
+  // -------------------------
   Stream<List<Product>> watchProducts() {
     return _ob.watchAllProducts().map((entities) {
       return entities.map((e) => e.toProduct()).toList();
     });
   }
 
-  void offlineError() {
-    Get.snackbar(
-      "خطا در اتصال",
-      "شما آفلاین هستید! اتصال خود را با انترنیت بررسی کنید.",
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red.withAlpha(40),
-      colorText: Colors.white,
+  // -------------------------
+  // Remote sync
+  // -------------------------
+  Future<void> syncFromRemote() async {
+    try {
+      final data = await _client
+          .from('products')
+          .select('id,title,group,desc,tool,image_urls,created_at,updated_at')
+          .order('created_at', ascending: false);
+
+      final products = (data as List)
+          .cast<Map<String, dynamic>>()
+          .map((row) => Product.fromJson({
+                ...row,
+                'imageURL': row['image_urls'],
+              }))
+          .toList();
+
+      _ob.store.runInTransaction(obx.TxMode.write, () {
+        _ob.productBox.removeAll();
+        for (final p in products) {
+          _ob.productBox.put(ProductEntity.fromProduct(p));
+        }
+      });
+
+      // Cache images (best-effort)
+      for (final p in products) {
+        await _cacheImagesForProduct(p);
+      }
+    } catch (_) {
+      // silent: offline / transient
+    }
+  }
+
+  void _startRealtime() {
+    if (_channel != null) return;
+    _channel = _client.channel('public:products');
+    _channel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'products',
+          callback: (payload) {
+            // برای سادگی: هر تغییر -> sync کامل
+            unawaited(syncFromRemote());
+          },
+        )
+        .subscribe();
+  }
+
+  void _stopRealtime() {
+    final ch = _channel;
+    _channel = null;
+    if (ch != null) {
+      _client.removeChannel(ch);
+    }
+  }
+
+  // -------------------------
+  // CRUD
+  // -------------------------
+  void offlineError(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('شما آفلاین هستید! لطفاً اینترنت را روشن کنید.'),
+        backgroundColor: Colors.red.shade600,
+      ),
     );
   }
 
-  Future<String> _getNextSerialId() async {
-    final counterRef = _db.collection("counters").doc("products");
+  Future<Product> addProduct({
+    required Product draft,
+    required String userId,
+  }) async {
+    // 1) Insert product (without images) to get id
+    final inserted = await _client
+        .from('products')
+        .insert({
+          'title': draft.title,
+          'group': draft.group,
+          'desc': draft.desc,
+          'tool': draft.tool,
+          'image_urls': <String>[],
+          'created_by': userId,
+        })
+        .select('id,title,group,desc,tool,image_urls,created_at,updated_at')
+        .single();
 
-    final int nextId = await _db.runTransaction<int>((transaction) async {
-      final snapshot = await transaction.get(counterRef);
+    final productId = inserted['id'].toString();
 
-      int lastId = 0;
+    // 2) Upload images
+    final urls = await _uploadImagesIfNeeded(
+      productId: productId,
+      userId: userId,
+      images: draft.imageURL,
+    );
 
-      if (snapshot.exists) {
-        lastId = (snapshot.data()?["lastId"] ?? 0) as int;
-      } else {
-        transaction.set(counterRef, {"lastId": 0});
-        lastId = 0;
-      }
+    // 3) Update row with image urls
+    final updatedRow = await _client
+        .from('products')
+        .update({
+          'image_urls': urls,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('id', productId)
+        .select('id,title,group,desc,tool,image_urls,created_at,updated_at')
+        .single();
 
-      final newId = lastId + 1;
-      transaction.update(counterRef, {"lastId": newId});
-
-      return newId;
+    final product = Product.fromJson({
+      ...updatedRow,
+      'imageURL': updatedRow['image_urls'],
     });
 
-    return nextId.toString();
+    _upsertLocalCache(product);
+    await _cacheImagesForProduct(product);
+    return product;
   }
 
-  Future<void> addproduct(Product product) async {
-    if (!isOnline.value) {
-      offlineError();
-      throw Exception("آفلاین هستید! نمیتوانید کارتی را اضافه کنید.");
+  Future<Product> updateProduct({
+    required Product product,
+    required String userId,
+  }) async {
+    final urls = await _uploadImagesIfNeeded(
+      productId: product.id,
+      userId: userId,
+      images: product.imageURL,
+    );
+
+    final row = await _client
+        .from('products')
+        .update({
+          'title': product.title,
+          'group': product.group,
+          'desc': product.desc,
+          'tool': product.tool,
+          'image_urls': urls,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('id', product.id)
+        .select('id,title,group,desc,tool,image_urls,created_at,updated_at')
+        .single();
+
+    final updated = Product.fromJson({
+      ...row,
+      'imageURL': row['image_urls'],
+    });
+
+    _upsertLocalCache(updated);
+    await _cacheImagesForProduct(updated);
+    return updated;
+  }
+
+  // -------------------------
+  // Image: upload + cache (ObjectBox)
+  // -------------------------
+  bool _isRemoteUrl(String s) => s.startsWith('http://') || s.startsWith('https://');
+
+  Future<List<String>> _uploadImagesIfNeeded({
+    required String productId,
+    required String userId,
+    required List<String> images,
+  }) async {
+    final out = <String>[];
+    final storage = _client.storage.from(SupabaseConfig.imageBucket);
+
+    for (var i = 0; i < images.length; i++) {
+      final img = images[i];
+      if (img.isEmpty) continue;
+      if (img.startsWith('assets/')) continue; // assets را آپلود نمی‌کنیم
+      if (_isRemoteUrl(img)) {
+        out.add(img);
+        continue;
+      }
+
+      // local file -> compress -> upload
+      final normalized = img.startsWith('file://') ? img.replaceFirst('file://', '') : img;
+      final bytes = await ImageUtils.compressToJpegBytes(normalized);
+      final ext = '.jpg';
+      final path = '$userId/$productId/${DateTime.now().millisecondsSinceEpoch}_$i$ext';
+
+      await storage.uploadBinary(
+        path,
+        bytes,
+        fileOptions: const FileOptions(
+          cacheControl: '3600',
+          upsert: true,
+          contentType: 'image/jpeg',
+        ),
+      );
+
+      final publicUrl = storage.getPublicUrl(path);
+      out.add(publicUrl);
+
+      // cache bytes locally in objectbox
+      _upsertImageCache(publicUrl, bytes);
     }
 
-    try {
-      final String serialId = await _getNextSerialId();
+    return out;
+  }
 
-      final newProduct = Product(
-        id: serialId,
-        title: product.title,
-        group: product.group,
-        desc: product.desc,
-        tool: product.tool,
-        imageURL: product.imageURL,
-      );
+  Future<void> _cacheImagesForProduct(Product p) async {
+    // فقط برای URLهای remote
+    for (final url in p.imageURL) {
+      if (!_isRemoteUrl(url)) continue;
+      final existing = _findImageCache(url);
+      if (existing != null) continue;
 
-      await _db.collection("products").doc(serialId).set(newProduct.toJson());
-
-      _upsertLocalCache(newProduct);
-
-      Get.snackbar(
-        "موفیقت",
-        "محصول با نمبر مسلسل $serialId اضافه شد!:",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.withAlpha(40),
-        colorText: Colors.white,
-      );
-    } catch (e) {
-      Get.snackbar(
-        "خطاء",
-        "خطاءدر اتصال با سرور: $e",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withAlpha(40),
-        colorText: Colors.white,
-      );
-      rethrow;
+      try {
+        final resp = await http.get(Uri.parse(url));
+        if (resp.statusCode == 200) {
+          _upsertImageCache(url, resp.bodyBytes);
+        }
+      } catch (_) {
+        // ignore
+      }
     }
   }
 
-  Future<void> updateProduct(Product product) async {
-    if (!isOnline.value) {
-      offlineError();
-      throw Exception("آفلاین هستید! ارتباط خود را با انترنیت بررسی کنید!");
+  ProductImageEntity? _findImageCache(String remoteUrl) {
+    final q = _ob.imageBox.query(ProductImageEntity_.remoteUrl.equals(remoteUrl)).build();
+    final found = q.findFirst();
+    q.close();
+    return found;
+  }
+
+  void _upsertImageCache(String remoteUrl, Uint8List bytes) {
+    final existing = _findImageCache(remoteUrl);
+    final e = ProductImageEntity(remoteUrl: remoteUrl, bytes: bytes);
+    if (existing != null) {
+      e.obId = existing.obId;
     }
+    _ob.imageBox.put(e);
+  }
 
-    try {
-      await _db.collection("products").doc(product.id).update(product.toJson());
-
-      _upsertLocalCache(product);
-
-      Get.snackbar(
-        "موفقیت",
-        "محصول موفقانه ویرایش شد.",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.blue.withAlpha(40),
-        colorText: Colors.white,
-      );
-    } catch (e) {
-      Get.snackbar(
-        "خطاء",
-        "خطا در ویرایش محصول: $e",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withAlpha(40),
-        colorText: Colors.white,
-      );
-      rethrow;
-    }
+  /// برای UI: اگر در ObjectBox کش هست bytes را بده
+  Uint8List? getCachedBytes(String remoteUrl) {
+    return _findImageCache(remoteUrl)?.bytes;
   }
 
   void _upsertLocalCache(Product product) {
-    final q = _ob.productBox
-        .query(ProductEntity_.firebaseId.equals(product.id))
-        .build();
+    final q = _ob.productBox.query(ProductEntity_.firebaseId.equals(product.id)).build();
     final existing = q.findFirst();
     q.close();
 
@@ -192,10 +316,8 @@ class ProductRepo extends GetxController {
     _ob.productBox.put(entity);
   }
 
-  @override
-  void onClose() {
-    _connSub?.cancel();
-    _fsSub?.cancel();
-    super.onClose();
+  Future<void> dispose() async {
+    await _connSub?.cancel();
+    _stopRealtime();
   }
 }

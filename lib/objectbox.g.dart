@@ -15,6 +15,7 @@ import 'package:objectbox/objectbox.dart' as obx;
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
 import 'objectbox/product_entity.dart';
+import 'objectbox/product_image_entity.dart';
 
 export 'package:objectbox/objectbox.dart'; // so that callers only have to import this file
 
@@ -22,7 +23,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(1, 6325593865609052828),
     name: 'ProductEntity',
-    lastPropertyId: const obx_int.IdUid(7, 3844230579915402002),
+    lastPropertyId: const obx_int.IdUid(9, 1950884127317231209),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -68,6 +69,53 @@ final _entities = <obx_int.ModelEntity>[
         type: 30,
         flags: 0,
       ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 1241344250429554739),
+        name: 'createdAtMs',
+        type: 6,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 1950884127317231209),
+        name: 'updatedAtMs',
+        type: 6,
+        flags: 0,
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[
+      obx_int.ModelRelation(
+        id: const obx_int.IdUid(1, 6324865531710076262),
+        name: 'images',
+        targetId: const obx_int.IdUid(2, 2423678578037893059),
+      ),
+    ],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(2, 2423678578037893059),
+    name: 'ProductImageEntity',
+    lastPropertyId: const obx_int.IdUid(3, 5674322751260389777),
+    flags: 0,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 8746517462983238078),
+        name: 'obId',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 2232597394081701674),
+        name: 'remoteUrl',
+        type: 9,
+        flags: 2048,
+        indexId: const obx_int.IdUid(2, 5084379973327507389),
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 5674322751260389777),
+        name: 'bytes',
+        type: 23,
+        flags: 0,
+      ),
     ],
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
@@ -111,15 +159,10 @@ Future<obx.Store> openStore({
 /// [obx.Store.new].
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
-    // If this version is not found, it means that this file was generated
-    // with an older version of the ObjectBox Dart generator.
-    // Please regenerate this file with the current generator version.
-    // Typically, this is done with `dart run build_runner build`.
-    generatorVersion: obx_int.GeneratorVersion.v2025_12_16,
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(1, 6325593865609052828),
-    lastIndexId: const obx_int.IdUid(1, 6100498532185635186),
-    lastRelationId: const obx_int.IdUid(0, 0),
+    lastEntityId: const obx_int.IdUid(2, 2423678578037893059),
+    lastIndexId: const obx_int.IdUid(2, 5084379973327507389),
+    lastRelationId: const obx_int.IdUid(1, 6324865531710076262),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
     retiredIndexUids: const [],
@@ -134,7 +177,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
     ProductEntity: obx_int.EntityDefinition<ProductEntity>(
       model: _entities[0],
       toOneRelations: (ProductEntity object) => [],
-      toManyRelations: (ProductEntity object) => {},
+      toManyRelations: (ProductEntity object) => {
+        obx_int.RelInfo<ProductEntity>.toMany(1, object.obId): object.images,
+      },
       getId: (ProductEntity object) => object.obId,
       setId: (ProductEntity object, int id) {
         object.obId = id;
@@ -150,7 +195,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final imageURLOffset = fbb.writeList(
           object.imageURL.map(fbb.writeString).toList(growable: false),
         );
-        fbb.startTable(8);
+        fbb.startTable(10);
         fbb.addInt64(0, object.obId);
         fbb.addOffset(1, firebaseIdOffset);
         fbb.addOffset(2, titleOffset);
@@ -158,6 +203,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addOffset(4, descOffset);
         fbb.addOffset(5, toolOffset);
         fbb.addOffset(6, imageURLOffset);
+        fbb.addInt64(7, object.createdAtMs);
+        fbb.addInt64(8, object.updatedAtMs);
         fbb.finish(fbb.endTable());
         return object.obId;
       },
@@ -190,6 +237,16 @@ obx_int.ModelDefinition getObjectBoxModel() {
           fb.StringReader(asciiOptimization: true),
           lazy: false,
         ).vTableGet(buffer, rootOffset, 16, []);
+        final createdAtMsParam = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          18,
+        );
+        final updatedAtMsParam = const fb.Int64Reader().vTableGetNullable(
+          buffer,
+          rootOffset,
+          20,
+        );
         final object = ProductEntity(
           obId: obIdParam,
           firebaseId: firebaseIdParam,
@@ -198,6 +255,56 @@ obx_int.ModelDefinition getObjectBoxModel() {
           desc: descParam,
           tool: toolParam,
           imageURL: imageURLParam,
+          createdAtMs: createdAtMsParam,
+          updatedAtMs: updatedAtMsParam,
+        );
+        obx_int.InternalToManyAccess.setRelInfo<ProductEntity>(
+          object.images,
+          store,
+          obx_int.RelInfo<ProductEntity>.toMany(1, object.obId),
+        );
+        return object;
+      },
+    ),
+    ProductImageEntity: obx_int.EntityDefinition<ProductImageEntity>(
+      model: _entities[1],
+      toOneRelations: (ProductImageEntity object) => [],
+      toManyRelations: (ProductImageEntity object) => {},
+      getId: (ProductImageEntity object) => object.obId,
+      setId: (ProductImageEntity object, int id) {
+        object.obId = id;
+      },
+      objectToFB: (ProductImageEntity object, fb.Builder fbb) {
+        final remoteUrlOffset = fbb.writeString(object.remoteUrl);
+        final bytesOffset = fbb.writeListInt8(object.bytes);
+        fbb.startTable(4);
+        fbb.addInt64(0, object.obId);
+        fbb.addOffset(1, remoteUrlOffset);
+        fbb.addOffset(2, bytesOffset);
+        fbb.finish(fbb.endTable());
+        return object.obId;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final obIdParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final remoteUrlParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final bytesParam =
+            const fb.Uint8ListReader(
+                  lazy: false,
+                ).vTableGet(buffer, rootOffset, 8, Uint8List(0))
+                as Uint8List;
+        final object = ProductImageEntity(
+          obId: obIdParam,
+          remoteUrl: remoteUrlParam,
+          bytes: bytesParam,
         );
 
         return object;
@@ -243,5 +350,39 @@ class ProductEntity_ {
   /// See [ProductEntity.imageURL].
   static final imageURL = obx.QueryStringVectorProperty<ProductEntity>(
     _entities[0].properties[6],
+  );
+
+  /// See [ProductEntity.createdAtMs].
+  static final createdAtMs = obx.QueryIntegerProperty<ProductEntity>(
+    _entities[0].properties[7],
+  );
+
+  /// See [ProductEntity.updatedAtMs].
+  static final updatedAtMs = obx.QueryIntegerProperty<ProductEntity>(
+    _entities[0].properties[8],
+  );
+
+  /// see [ProductEntity.images]
+  static final images =
+      obx.QueryRelationToMany<ProductEntity, ProductImageEntity>(
+        _entities[0].relations[0],
+      );
+}
+
+/// [ProductImageEntity] entity fields to define ObjectBox queries.
+class ProductImageEntity_ {
+  /// See [ProductImageEntity.obId].
+  static final obId = obx.QueryIntegerProperty<ProductImageEntity>(
+    _entities[1].properties[0],
+  );
+
+  /// See [ProductImageEntity.remoteUrl].
+  static final remoteUrl = obx.QueryStringProperty<ProductImageEntity>(
+    _entities[1].properties[1],
+  );
+
+  /// See [ProductImageEntity.bytes].
+  static final bytes = obx.QueryByteVectorProperty<ProductImageEntity>(
+    _entities[1].properties[2],
   );
 }

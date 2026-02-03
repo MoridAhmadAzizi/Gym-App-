@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:6325593865609052828",
-      "lastPropertyId": "7:3844230579915402002",
+      "lastPropertyId": "9:1950884127317231209",
       "name": "ProductEntity",
       "properties": [
         {
@@ -45,14 +45,56 @@
           "id": "7:3844230579915402002",
           "name": "imageURL",
           "type": 30
+        },
+        {
+          "id": "8:1241344250429554739",
+          "name": "createdAtMs",
+          "type": 6
+        },
+        {
+          "id": "9:1950884127317231209",
+          "name": "updatedAtMs",
+          "type": 6
+        }
+      ],
+      "relations": [
+        {
+          "id": "1:6324865531710076262",
+          "name": "images",
+          "targetId": "2:2423678578037893059"
+        }
+      ]
+    },
+    {
+      "id": "2:2423678578037893059",
+      "lastPropertyId": "3:5674322751260389777",
+      "name": "ProductImageEntity",
+      "properties": [
+        {
+          "id": "1:8746517462983238078",
+          "name": "obId",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2232597394081701674",
+          "name": "remoteUrl",
+          "indexId": "2:5084379973327507389",
+          "type": 9,
+          "flags": 2048
+        },
+        {
+          "id": "3:5674322751260389777",
+          "name": "bytes",
+          "type": 23
         }
       ],
       "relations": []
     }
   ],
-  "lastEntityId": "1:6325593865609052828",
-  "lastIndexId": "1:6100498532185635186",
-  "lastRelationId": "0:0",
+  "lastEntityId": "2:2423678578037893059",
+  "lastIndexId": "2:5084379973327507389",
+  "lastRelationId": "1:6324865531710076262",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
   "modelVersionParserMinimum": 5,

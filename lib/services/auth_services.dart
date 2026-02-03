@@ -1,48 +1,50 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
-import 'package:get/get_navigation/src/snackbar/snackbar.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-  Future<User?> signInWithGoogle() async {
-    try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+  AuthService(this._client);
 
-      if (googleUser == null) {
-        return null;
-      }
-      // Get authentication details
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      // Create Firebase credential
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-      final UserCredential userCredential =
-          await _auth.signInWithCredential(credential);
-      return userCredential.user;
-    } catch (e) {
-      return null;
-    }
+  final sb.SupabaseClient _client;
+
+  sb.Session? get session => _client.auth.currentSession;
+  sb.User? get currentUser => _client.auth.currentUser;
+
+  Stream<sb.AuthState> get authStateChanges => _client.auth.onAuthStateChange;
+
+  Future<void> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    await _client.auth.signInWithPassword(email: email, password: password);
   }
 
-  // Sign out
+  Future<void> signUpAndSendOtp({
+    required String email,
+    required String password,
+  }) async {
+    await _client.auth.signUp(email: email, password: password);
+  }
+
+  Future<sb.AuthResponse> verifySignupOtp({
+    required String email,
+    required String token,
+  }) async {
+    return _client.auth.verifyOTP(
+      type: sb.OtpType.signup,
+      email: email,
+      token: token,
+    );
+  }
+
+  /// ارسال مجدد OTP (Signup)
+  Future<void> resendSignupOtp({
+    required String email,
+  }) async {
+    await _client.auth.resend(
+      type: sb.OtpType.signup,
+      email: email,
+    );
+  }
+
   Future<void> signOut() async {
-    try {
-      await _googleSignIn.signOut();
-      await _auth.signOut();
-    } catch (e) {
-      Get.snackbar("Error", "oops something unexpected",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.withAlpha(40),
-          colorText: Colors.black87);
-    }
+    await _client.auth.signOut();
   }
-  User? get currentUser => _auth.currentUser;
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
 }

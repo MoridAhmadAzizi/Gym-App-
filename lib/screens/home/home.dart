@@ -1,13 +1,12 @@
 import 'dart:io';
 
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:wahab/services/product_repo.dart';
 
-import '../../model/product.dart';
+import 'package:wahab/model/product.dart';
+import 'package:wahab/services/auth_cubit.dart';
+import 'package:wahab/services/product_cubit.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -17,395 +16,488 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  String _searchText = '';
-  int _lastTabIndex = 0;
+  // 0: همه، 1: گروپ اول، 2: گروپ دوم، 3: افزودن
+  int _tabIndex = 0;
 
-  void _searchProducts(String query) {
-    setState(() => _searchText = query.trim());
+  final TextEditingController _searchCtrl = TextEditingController();
+
+  // اگر اسم گروپ‌ها در دیتای شما متفاوت است، این دو را تغییر بده
+  static const String group1Name = 'گروپ اول';
+  static const String group2Name = 'گروپ دوم';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
-  List<Product> _applySearch(List<Product> list) {
-    if (_searchText.isEmpty) return list;
-
-    final q = _searchText.toLowerCase();
-    return list.where((product) {
-      final title = product.title.toLowerCase();
-      final group = product.group.toLowerCase();
-      return title.contains(q) || group.contains(q);
-    }).toList();
+  void _snack(String msg, {bool ok = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: ok ? Colors.green.shade600 : Colors.red.shade600,
+      ),
+    );
   }
 
-  List<Product> _getProductsByTab(List<Product> list, int tabIndex) {
-    final searched = _applySearch(list);
+  void _onTabTap({
+    required int index,
+    required bool isOnline,
+    required bool canEdit,
+  }) {
+    // Add Tab
+    if (index == 3) {
+      if (!canEdit) {
+        _snack('شما اجازه افزودن/ویرایش ندارید.');
+        return;
+      }
+      if (!isOnline) {
+        _snack('برای افزودن/ویرایش باید آنلاین باشید.');
+        return;
+      }
+      // به صفحه افزودن برو و تب قبلی را نگه دار
+      context.push('/add');
+      return;
+    }
 
-    if (tabIndex == 0) {
-      return searched.where((p) => p.group == 'گروپ اول').toList();
-    } else if (tabIndex == 1) {
-      return searched.where((p) => p.group == 'گروپ دوم').toList();
-    } else {
-      return searched; // همه
+    setState(() => _tabIndex = index);
+  }
+
+  List<Product> _applyFilters(List<Product> all) {
+    final q = _searchCtrl.text.trim().toLowerCase();
+
+    // فیلتر گروپ
+    List<Product> filtered = all;
+    if (_tabIndex == 1) {
+      filtered = all.where((p) => (p.group).trim() == group1Name).toList();
+    } else if (_tabIndex == 2) {
+      filtered = all.where((p) => (p.group).trim() == group2Name).toList();
+    }
+
+    // جستجو (روی عنوان + گروپ + توضیح اگر داشته باشی)
+    if (q.isNotEmpty) {
+      filtered = filtered.where((p) {
+        final title = p.title.toLowerCase();
+        final group = p.group.toLowerCase();
+        // اگر در مدل شما description وجود دارد، این خط را فعال کن:
+        // final desc = (p.description ?? '').toLowerCase();
+        // return title.contains(q) || group.contains(q) || desc.contains(q);
+
+        return title.contains(q) || group.contains(q);
+      }).toList();
+    }
+
+    return filtered;
+  }
+
+  String _tabTitle() {
+    switch (_tabIndex) {
+      case 1:
+        return group1Name;
+      case 2:
+        return group2Name;
+      default:
+        return 'همه محصولات';
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Builder(
-        builder: (context) {
-          final controller = DefaultTabController.of(context);
+    final auth = context.watch<AuthCubit>().state;
+    final role = auth.profile?.role ?? 'user';
+    final canEdit = role == 'admin' || role == 'super_admin';
 
-          return Scaffold(
-            backgroundColor: Colors.grey[100],
-            appBar: AppBar(
-              iconTheme: const IconThemeData(color: Colors.white),
-              backgroundColor: Colors.black87,
-              title: const Text(
-                'لیست محصولات',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              centerTitle: true,
-            ),
-            drawer: const NavigationDrawer(),
-            body: Column(
+    return BlocBuilder<ProductCubit, ProductState>(
+      builder: (context, pState) {
+        final isOnline = pState.isOnline;
+        final products = _applyFilters(pState.products);
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('لیست محصولات'),
+          ),
+          drawer: const _NavigationDrawer(),
+          body: SafeArea(
+            child: Column(
               children: [
-                // متن معرفی
-                Container(
-                  margin: const EdgeInsets.only(top: 20.0, left: 20.0, right: 20.0),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(10.0),
-                    border: Border.all(color: Colors.grey[800]!, width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey[300]!,
-                        spreadRadius: 1,
-                        blurRadius: 5,
-                        offset: const Offset(0, 1),
+                // --- معرفی برنامه (۲ خط کوچک) + سرچ ---
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'به برنامه مدیریت کالا خوش آمدید.\nدر تب‌ها فیلتر کنید و داخل همان تب جستجو انجام دهید.',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              height: 1.4,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withAlpha(190),
+                            ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _searchCtrl,
+                        onChanged: (_) => setState(() {}),
+                        textInputAction: TextInputAction.search,
+                        decoration: InputDecoration(
+                          hintText: 'جستجو در کارت‌ها...',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: _searchCtrl.text.trim().isEmpty
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () {
+                                    _searchCtrl.clear();
+                                    setState(() {});
+                                  },
+                                ),
+                          filled: true,
+                          fillColor: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest
+                              .withAlpha(120),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(width: 2, color: Colors.grey[300]!)
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(width: 2, color: Colors.grey[300]!)
+                          )
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // وضعیت آنلاین/آفلاین کوچک
+                      Row(
+                        children: [
+                          Icon(
+                            isOnline ? Icons.wifi : Icons.wifi_off,
+                            size: 16,
+                            color: isOnline
+                                ? Colors.green.shade700
+                                : Colors.red.shade700,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isOnline ? 'آنلاین' : 'آفلاین',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  color: isOnline
+                                      ? Colors.green.shade700
+                                      : Colors.red.shade700,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                          const Spacer(),
+                          if (!canEdit)
+                            Text(
+                              'فقط مشاهده',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withAlpha(160),
+                                  ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Center(
-                      child: Text(
-                        "این برنامه برای ثبت و ویرایش محصولات می باشد که معلومات به شکل محلی داخل سیستم ذخیره می شوند",
-                        style: TextStyle(
-                          fontFamily: 'Vazirmatn',
-                          fontSize: 14,
-                          decoration: TextDecoration.none,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
 
-                const SizedBox(height: 22),
+                const SizedBox(height: 6),
 
-                // سرچ
-                Padding(
-                  padding: const EdgeInsets.only(left: 20, right: 20),
-                  child: CupertinoSearchTextField(
-                    onChanged: _searchProducts,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10.0),
-                      border: Border.all(color: Colors.grey.shade300, width: 2.0),
-                    ),
-                    placeholder: 'جستجو.....',
-                    placeholderStyle: TextStyle(
-                      fontFamily: 'Vazirmatn',
-                      color: Colors.grey.shade500,
-                      fontSize: 16.0,
-                    ),
-                    prefixIcon: const Icon(
-                      CupertinoIcons.search,
-                      color: Colors.grey,
-                      size: 30.0,
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                    autofocus: false,
-                    autocorrect: true,
-                  ),
-                ),
-
-                const SizedBox(height: 15),
-
+                // --- لیست ---
                 Expanded(
-                  child: StreamBuilder<List<Product>>(
-                    stream: ProductRepo.instance.watchProducts(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      if (snapshot.hasError) {
-                        return Center(child: Text("Error: ${snapshot.error}"));
-                      }
-
-                      final allProducts = snapshot.data ?? [];
-
-                      return TabBarView(
-                        physics: const NeverScrollableScrollPhysics(),
-                        children: [
-                          _buildTabContent(0, allProducts),
-                          _buildTabContent(1, allProducts),
-                          _buildTabContent(2, allProducts),
-                          const SizedBox.shrink(),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-
-                // TabBar پایین
-                Container(
-                  margin: const EdgeInsets.all(2),
-                  height: kToolbarHeight - 8.0,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: Obx(() {
-                    final online = ProductRepo.instance.isOnline.value;
-
-                    return TabBar(
-                      onTap: (index) async {
-                        if (index != 3) {
-                          _lastTabIndex = index;
-                          return;
-                        }
-
-                        // تب Add
-                        if (!online) {
-                          ProductRepo.instance.offlineError();
-                          controller.animateTo(_lastTabIndex);
-                          return;
-                        }
-                        controller.animateTo(_lastTabIndex);
-                        final result = await context.push('/add');
-                        if (result == 'added' || result == 'updated') {
-                          setState(() {});
-                        }
-                      },
-                      tabs: [
-                        const Tab(text: 'گروپ اول'),
-                        const Tab(text: 'گروپ دوم'),
-                        const Tab(text: 'همه'),
-                        Tab(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                online ? Icons.add : Icons.lock_outline,
-                                size: 18,
-                                color: online ? Colors.grey : Colors.grey,
-                              ),
-                              const SizedBox(width: 3),
-                              Text(online ? 'افزودن' : 'قفل'),
-                            ],
-                          ),
+                  child: products.isEmpty
+                      ?
+                  SizedBox(
+                        height: MediaQuery.of(context).size.height,
+                        width: MediaQuery.of(context).size.width,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          spacing: 10,
+                          children: [
+                            Image.asset(
+                              "assets/images/data.png",
+                              width: double.infinity,
+                              height: 250,
+                              fit: BoxFit.cover,
+                            ),
+                            const Text(
+                              'هیچ محصولی موجود نیست.',
+                              style: TextStyle(fontSize: 15),
+                            )
+                          ],
                         ),
-                      ],
-                      labelColor: Colors.white,
-                      indicatorColor: Colors.grey,
-                      labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                      unselectedLabelColor: Colors.grey,
-                      indicator: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8.0),
-                        color: Colors.black87,
-                      ),
-                      indicatorSize: TabBarIndicatorSize.tab,
-                    );
-                  }),
+                      )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                          itemCount: products.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (context, i) {
+                            final product = products[i];
+                            return _ProductCard(product: product);
+                          },
+                        ),
                 ),
               ],
             ),
-          );
-        },
-      ),
-    );
-  }
+          ),
 
-  Widget _buildTabContent(int tabIndex, List<Product> allProducts) {
-    final products = _getProductsByTab(allProducts, tabIndex);
-
-    if (_searchText.isNotEmpty && products.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.search_off, size: 60, color: Colors.grey),
-            const SizedBox(height: 15),
-            Text(
-              '"$_searchText"پیدا نشد',
-              style: const TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 5),
-            const Text(
-              'کلمه دیگری را امتحان کنید!',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (products.isEmpty) {
-      return const Center(
-        child: Text("پیدا نشد", style: TextStyle(fontSize: 16, color: Colors.grey)),
-      );
-    }
-
-    return SingleChildScrollView(
-      child: Column(
-        children: products.map((product) {
-          String imagePath;
-          if (product.imageURL.isNotEmpty && product.imageURL[0].isNotEmpty) {
-            imagePath = product.imageURL[0];
-          } else {
-            imagePath = 'assets/images/product.png';
-          }
-
-          final isAsset = imagePath.startsWith('assets/');
-
-          return _imageCard(
-            imagePath: imagePath,
-            isAsset: isAsset,
-            title: product.title,
-            description: product.group,
-            product: product,
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _imageCard({
-    required String imagePath,
-    required bool isAsset,
-    required String title,
-    required String description,
-    required Product product,
-  }) {
-    return GestureDetector(
-      onTap: () async {
-        final result = await context.push('/detail', extra: product);
-        if (result == 'updated_from_detail') {
-          setState(() {});
-        }
+          // --- Bottom Navigation ---
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex:
+                _tabIndex.clamp(0, 2), // تب Add را "انتخاب‌شده" نشان نمی‌دهیم
+            onTap: (i) =>
+                _onTabTap(index: i, isOnline: isOnline, canEdit: canEdit),
+            type: BottomNavigationBarType.fixed,
+            items: [
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.view_list),
+                label: 'همه',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.filter_alt),
+                label: group1Name,
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.filter_alt_outlined),
+                label: group2Name,
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(
+                  canEdit
+                      ? (isOnline ? Icons.add_circle : Icons.lock)
+                      : Icons.lock,
+                ),
+                label: 'افزودن',
+              ),
+            ],
+          ),
+        );
       },
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        margin: const EdgeInsets.only(left: 20, right: 20, bottom: 10, top: 10),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(9),
-          border: Border.all(color: Colors.grey[100]!, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey[300]!,
-              spreadRadius: 1,
-              blurRadius: 2,
-              offset: const Offset(0, 0),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[400]!, width: 2),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(7),
-                    child: isAsset
-                        ? Image.asset(imagePath, width: 50, height: 50, fit: BoxFit.cover)
-                        : Image.file(File(imagePath), width: 50, height: 50, fit: BoxFit.cover),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    Text(description, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-                  ],
-                ),
-              ],
-            ),
-            const Icon(Icons.arrow_forward_outlined, size: 25),
-          ],
-        ),
-      ),
     );
   }
 }
 
-class NavigationDrawer extends StatelessWidget {
-  const NavigationDrawer({super.key});
+class _ProductCard extends StatelessWidget {
+  const _ProductCard({required this.product});
+  final Product product;
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    return Drawer(
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            buildHeaderItems(context, user),
-            buildMenuItems(context),
-          ],
+    final pState = context.watch<ProductCubit>().state;
+
+    final image =
+        (product.imageURL.isNotEmpty && product.imageURL.first.isNotEmpty)
+            ? product.imageURL.first
+            : 'assets/images/product.png';
+
+    return InkWell(
+      onTap: () => context.push('/detail', extra: product),
+      borderRadius: BorderRadius.circular(14),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(width: 1, color: Colors.grey),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+
+                  ),
+                  width: 56,
+                  height: 56,
+                  child: _Thumb(image: image, isOnline: pState.isOnline),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      product.group,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_left),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-Widget buildHeaderItems(BuildContext context, User? user) => SafeArea(
-      child: Container(
-        color: Colors.grey,
-        padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+class _Thumb extends StatelessWidget {
+  const _Thumb({required this.image, required this.isOnline});
+  final String image;
+  final bool isOnline;
+
+  bool _isRemote(String s) =>
+      s.startsWith('http://') || s.startsWith('https://');
+
+  @override
+  Widget build(BuildContext context) {
+    if (image.startsWith('assets/')) {
+      return Image.asset(image, fit: BoxFit.cover);
+    }
+
+    if (_isRemote(image)) {
+      if (isOnline) {
+        return Image.network(
+          image,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const Icon(Icons.image),
+        );
+      }
+
+      final bytes = context.read<ProductCubit>().cachedBytes(image);
+      if (bytes != null) {
+        return Image.memory(bytes, fit: BoxFit.cover);
+      }
+      return const Icon(Icons.image_not_supported);
+    }
+
+    // local file path
+    final normalized =
+        image.startsWith('file://') ? image.replaceFirst('file://', '') : image;
+    final f = File(normalized);
+    if (f.existsSync()) {
+      return Image.file(f, fit: BoxFit.cover);
+    }
+    return const Icon(Icons.image_not_supported);
+  }
+}
+
+class _NavigationDrawer extends StatelessWidget {
+  const _NavigationDrawer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 10),
-            const CircleAvatar(
-              radius: 52,
-              backgroundImage: AssetImage('assets/images/product.png'),
-            ),
-            const SizedBox(height: 6),
-            const Text('Morid Ahmad Azizi', style: TextStyle(fontSize: 22, color: Colors.white)),
-            Text('${user?.email ?? ""}', style: const TextStyle(fontSize: 16, color: Colors.white)),
+            _buildHeader(context),
+            const SizedBox(height: 8),
+            Expanded(child: _buildMenu(context)),
           ],
         ),
       ),
     );
+  }
 
-Widget buildMenuItems(BuildContext context) => Padding(
-      padding: const EdgeInsets.all(12.0),
-      child: Wrap(
+  Widget _buildHeader(BuildContext context) {
+    final state = context.watch<AuthCubit>().state; // AppAuthState
+    final email = state.session?.user.email ?? '';
+    final role = state.profile?.role ?? 'user';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: Theme.of(context).colorScheme.primary,
+      child: Row(
         children: [
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('پروفایل'),
-            onTap: () {},
+          const CircleAvatar(
+            radius: 26,
+            backgroundImage: AssetImage('assets/images/product.png'),
           ),
-          const ListTile(
-            leading: Icon(Icons.logout, color: Colors.red),
-            title: Text('خارج شدن', style: TextStyle(color: Colors.red)),
-            onTap: signUserout,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Wahab',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  email,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color:
+                        Theme.of(context).colorScheme.onPrimary.withAlpha(220),
+                  ),
+                ),
+                Text(
+                  'Role: $role',
+                  style: TextStyle(
+                    color:
+                        Theme.of(context).colorScheme.onPrimary.withAlpha(220),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
+  }
 
-void signUserout() {
-  FirebaseAuth.instance.signOut();
+  Widget _buildMenu(BuildContext context) {
+    final authState = context.watch<AuthCubit>().state; // AppAuthState
+    final role = authState.profile?.role ?? 'user';
+    final canSeeUsers = role == 'super_admin';
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      children: [
+        if (canSeeUsers)
+          ListTile(
+            leading: const Icon(Icons.supervisor_account),
+            title: const Text('کاربران'),
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/users');
+            },
+          ),
+        ListTile(
+          leading: const Icon(Icons.logout),
+          title: const Text('خروج'),
+          onTap: () async {
+            Navigator.pop(context);
+            await context.read<AuthCubit>().signOut();
+          },
+        ),
+      ],
+    );
+  }
 }

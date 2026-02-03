@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'package:wahab/objectbox.g.dart';
 import 'package:wahab/objectbox/product_entity.dart';
+import 'package:wahab/objectbox/product_image_entity.dart';
 
 class ObjectBoxApp {
   final Store store;
   late final Box<ProductEntity> productBox;
+  late final Box<ProductImageEntity> imageBox;
 
   ObjectBoxApp._(this.store) {
     productBox = store.box<ProductEntity>();
+    imageBox = store.box<ProductImageEntity>();
   }
 
   static Future<ObjectBoxApp> create() async {
