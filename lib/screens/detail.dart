@@ -19,45 +19,63 @@ class Detail extends StatefulWidget {
 }
 
 class _DetailState extends State<Detail> {
-  final PageController _pageCtrl = PageController();
-  Timer? _timer;
-  int _page = 0;
+  late final PageController _pageCtrl;
+  Timer? _autoSlideTimer;
+  int _currentPage = 0;
+  bool _isUserInteracting = false;
+
+  final _slideDuration = const Duration(seconds: 4);
+  final _animationDuration = const Duration(milliseconds: 550);
 
   bool _isRemote(String s) => s.startsWith('http://') || s.startsWith('https://');
-
-  void _showOfflineMsg() {
-    Get.snackbar(
-      'آفلاین هستید',
-      'شما افلاین هستید ، اتصال خود را بررسی کنید',
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(12),
-      duration: const Duration(seconds: 2),
-    );
-  }
 
   @override
   void initState() {
     super.initState();
 
-    // ✅ اتومات هر 3 ثانیه
-    _timer = Timer.periodic(const Duration(seconds: 3), (_) {
-      final images = widget.product.imagePaths;
-      if (images.length <= 1) return;
+    // ✅ keepPage:true تا PageView دوباره از نو ساخته نشود و چشمک نزند
+    _pageCtrl = PageController(
+      viewportFraction: 1.0,
+      keepPage: true,
+    );
 
-      _page = (_page + 1) % images.length;
-      if (_pageCtrl.hasClients) {
-        _pageCtrl.animateToPage(
-          _page,
-          duration: const Duration(milliseconds: 1000),
-          curve: Curves.ease,
-        );
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startAutoSlide();
     });
+  }
+
+  void _startAutoSlide() {
+    _autoSlideTimer?.cancel();
+
+    final images = widget.product.imagePaths;
+    if (images.length <= 1) return;
+
+    _autoSlideTimer = Timer.periodic(_slideDuration, (_) {
+      if (!_pageCtrl.hasClients || !mounted) return;
+      if (_isUserInteracting) return;
+
+      final next = (_currentPage + 1) % images.length;
+      _pageCtrl.animateToPage(
+        next,
+        duration: _animationDuration,
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  void _pauseAutoSlide() {
+    _isUserInteracting = true;
+    _autoSlideTimer?.cancel();
+  }
+
+  void _resumeAutoSlide() {
+    _isUserInteracting = false;
+    _startAutoSlide();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _autoSlideTimer?.cancel();
     _pageCtrl.dispose();
     super.dispose();
   }
@@ -74,11 +92,9 @@ class _DetailState extends State<Detail> {
       appBar: AppBar(
         title: const Text('جزئیات محصول'),
         actions: [
-          // ✅ وقتی آفلاین هستیم، قلم نمایش داده نمی‌شود
           Obx(() {
             final online = pc.isOnline.value;
             if (!online) return const SizedBox.shrink();
-
             return IconButton(
               onPressed: () => Get.to(() => Add(initialProduct: widget.product)),
               icon: const Icon(Icons.edit),
@@ -89,7 +105,7 @@ class _DetailState extends State<Detail> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildImages(context, pc),
+          _buildImageSlider(pc),
           const SizedBox(height: 12),
           Text(
             widget.product.title,
@@ -98,15 +114,24 @@ class _DetailState extends State<Detail> {
           const SizedBox(height: 6),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 7,
             children: [
-          _chip(context, 'گروه: ${widget.product.group}'),
-          if (created != null) _chip(context, 'ایجاد: ${DateUtilsFa.dateYmd(created)} - ${DateUtilsFa.timeHm(created)}'),
-          if (showEdited) _chip(context, 'آخرین ویرایش: ${DateUtilsFa.dateYmd(updated)} - ${DateUtilsFa.timeHm(updated)}'),
+              _chip(context, 'گروه: ${widget.product.group}'),
+              const SizedBox(height: 7),
+              if (created != null)
+                _chip(context, 'ایجاد: ${DateUtilsFa.dateYmd(created)} - ${DateUtilsFa.timeHm(created)}'),
+              if (showEdited) ...[
+                const SizedBox(height: 7),
+                _chip(context, 'آخرین ویرایش: ${DateUtilsFa.dateYmd(updated)} - ${DateUtilsFa.timeHm(updated)}'),
+              ],
             ],
           ),
           const SizedBox(height: 12),
-          Text(widget.product.desc, style: Theme.of(context).textTheme.titleSmall),
+          Text('توضحیات', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+          const SizedBox(height: 8),
+          if (widget.product.desc.isEmpty)
+            Center(child: _chip(context, 'توضیحاتی درباره این محصول وجود ندارد!'))
+          else
+            Text(widget.product.desc, style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 18),
           Text('ابزارها', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
           const SizedBox(height: 8),
@@ -115,12 +140,13 @@ class _DetailState extends State<Detail> {
             runSpacing: 6,
             children: [
               for (final t in widget.product.tools) _chip(context, t),
-              if (widget.product.tools.isEmpty) _chip(context, '—'),
+              if (widget.product.tools.isEmpty) Center(child: _chip(context, 'هیچ کدام ابزاری هنوز اضافه نشده!')),
             ],
           ),
-
-          Obx(() => pc.isOnline.value ? const SizedBox() : Padding(
-            padding: const EdgeInsets.only(top: 12),
+          Obx(() => pc.isOnline.value
+              ? const SizedBox()
+              : const Padding(
+            padding: EdgeInsets.only(top: 12),
             child: Text('شما افلاین هستید ، اتصال خود را بررسی کنید', style: TextStyle(color: Colors.red)),
           )),
         ],
@@ -139,7 +165,7 @@ class _DetailState extends State<Detail> {
     );
   }
 
-  Widget _buildImages(BuildContext context, ProductController pc) {
+  Widget _buildImageSlider(ProductController pc) {
     final images = widget.product.imagePaths;
 
     if (images.isEmpty) {
@@ -154,66 +180,158 @@ class _DetailState extends State<Detail> {
       );
     }
 
-    Widget buildOne(String src) {
-      if (src.startsWith('assets/')) {
-        return Image.asset(src, fit: BoxFit.cover);
-      }
-
-      if (_isRemote(src)) {
-        final cached = pc.cachedBytes(src);
-        if (cached != null) return Image.memory(cached, fit: BoxFit.cover);
-        return Image.network(src, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.broken_image));
-      }
-
-      final normalized = src.startsWith('file://') ? src.replaceFirst('file://', '') : src;
-
-      if (!File(normalized).existsSync()) {
-        final cached = pc.cachedBytes(src);
-        if (cached != null) return Image.memory(cached, fit: BoxFit.cover);
-        return const Icon(Icons.broken_image);
-      }
-
-      return Image.file(File(normalized), fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.broken_image));
-    }
-
     return Column(
       children: [
         SizedBox(
           height: 240,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: PageView.builder(
-              controller: _pageCtrl,
-              itemCount: images.length,
-              onPageChanged: (i) => setState(() => _page = i),
-              itemBuilder: (_, i) {
-                final src = images[i];
-                return Container(
-                  color: Colors.grey.shade100,
-                  child: buildOne(src),
-                );
-              },
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (n) {
+              // ✅ وقتی کاربر اسکرول می‌کند، اتو-اسلاید را موقتاً قطع کن
+              if (n is ScrollStartNotification) _pauseAutoSlide();
+              if (n is ScrollEndNotification) _resumeAutoSlide();
+              return false;
+            },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: PageView.builder(
+                controller: _pageCtrl,
+                itemCount: images.length,
+                onPageChanged: (index) {
+                  if (!mounted) return;
+                  setState(() => _currentPage = index);
+                },
+                itemBuilder: (_, index) {
+                  return _ImageItem(
+                    key: ValueKey(images[index]), // ✅ key پایدار
+                    imagePath: images[index],
+                    pc: pc,
+                    isRemote: _isRemote,
+                  );
+                },
+              ),
             ),
           ),
         ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(images.length, (i) {
-            final active = i == _page;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: active ? 16 : 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: active ? Colors.grey.shade900 : Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(999),
-              ),
-            );
-          }),
-        ),
+        const SizedBox(height: 12),
+        _buildPageIndicator(images.length),
       ],
+    );
+  }
+
+  Widget _buildPageIndicator(int length) {
+    if (length <= 1) return const SizedBox();
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(length, (index) {
+        final isActive = index == _currentPage;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: isActive ? 20 : 8,
+          height: 8,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            color: isActive ? Theme.of(context).primaryColor : Colors.grey.shade400,
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _ImageItem extends StatelessWidget {
+  const _ImageItem({
+    super.key,
+    required this.imagePath,
+    required this.pc,
+    required this.isRemote,
+  });
+
+  final String imagePath;
+  final ProductController pc;
+  final bool Function(String) isRemote;
+
+  @override
+  Widget build(BuildContext context) {
+    // ✅ gaplessPlayback جلو چشمک هنگام تغییر تصویر را می‌گیرد
+    if (imagePath.startsWith('assets/')) {
+      return Image.asset(
+        imagePath,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        gaplessPlayback: true,
+      );
+    }
+
+    if (isRemote(imagePath)) {
+      final cached = pc.cachedBytes(imagePath);
+      if (cached != null) {
+        return Image.memory(
+          cached,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          gaplessPlayback: true,
+        );
+      }
+
+      return Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        gaplessPlayback: true,
+        // ✅ loadingBuilder بدون setState
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return _loading();
+        },
+        errorBuilder: (_, __, ___) => _error(),
+      );
+    }
+
+    final normalized = imagePath.startsWith('file://') ? imagePath.replaceFirst('file://', '') : imagePath;
+    final file = File(normalized);
+
+    if (!file.existsSync()) {
+      final cached = pc.cachedBytes(imagePath);
+      if (cached != null) {
+        return Image.memory(
+          cached,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          gaplessPlayback: true,
+        );
+      }
+      return _error();
+    }
+
+    return Image.file(
+      file,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      gaplessPlayback: true,
+      errorBuilder: (_, __, ___) => _error(),
+    );
+  }
+
+  Widget _loading() {
+    return Container(
+      color: Colors.grey.shade100,
+      child: const Center(
+        child: SizedBox(width: 30, height: 30, child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+    );
+  }
+
+  Widget _error() {
+    return Container(
+      color: Colors.grey.shade100,
+      child: const Center(child: Icon(Icons.broken_image, size: 60, color: Colors.grey)),
     );
   }
 }

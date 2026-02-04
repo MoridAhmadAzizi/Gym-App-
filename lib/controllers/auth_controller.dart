@@ -1,3 +1,4 @@
+// lib/controllers/auth_controller.dart
 import 'dart:async';
 
 import 'package:get/get.dart';
@@ -35,6 +36,7 @@ class AuthController extends GetxController {
 
   Future<void> refreshAuth() async {
     isLoading.value = true;
+
     final s = _auth.session;
     session.value = s;
 
@@ -48,6 +50,7 @@ class AuthController extends GetxController {
     try {
       final p = await _profiles.fetchMyProfile();
       profile.value = p;
+
       if (p == null) {
         message.value = 'پروفایل یافت نشد';
       } else if (!p.isActive) {
@@ -65,6 +68,7 @@ class AuthController extends GetxController {
 
   Future<void> signOut() async {
     await _auth.signOut();
+    // refreshAuth توسط authStateChanges هم صدا می‌شود
     await refreshAuth();
   }
 

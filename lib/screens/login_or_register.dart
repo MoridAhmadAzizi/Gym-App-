@@ -1,3 +1,4 @@
+// lib/screens/login_or_register.dart
 import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'register_page.dart';
@@ -18,6 +19,8 @@ class _LoginOrRegisterState extends State<LoginOrRegister> {
 
   @override
   Widget build(BuildContext context) {
-    return showLoginPage ? LoginPage(onTap: togglePages) : RegisterPage(onTap: togglePages);
+    return showLoginPage
+        ? LoginPage(onTap: togglePages)
+        : RegisterPage(onTap: togglePages);
   }
 }

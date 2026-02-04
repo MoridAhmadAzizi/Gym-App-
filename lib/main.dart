@@ -24,7 +24,7 @@ Future<void> main() async {
   final ob = await ObjectBoxApp.create();
   final client = Supabase.instance.client;
 
-  // Services / repos (singleton)
+  // Services / Repos
   Get.put<AuthService>(AuthService(client), permanent: true);
   Get.put<ProfileRepo>(ProfileRepo(client), permanent: true);
   Get.put<ProductRepo>(ProductRepo(client: client, objectBox: ob), permanent: true);
@@ -34,7 +34,10 @@ Future<void> main() async {
     AuthController(auth: Get.find<AuthService>(), profiles: Get.find<ProfileRepo>()),
     permanent: true,
   );
-  Get.put<ProductController>(ProductController(Get.find<ProductRepo>()), permanent: true);
+  Get.put<ProductController>(
+    ProductController(Get.find<ProductRepo>()),
+    permanent: true,
+  );
 
   runApp(const MyApp());
 }
@@ -49,10 +52,9 @@ class MyApp extends StatelessWidget {
       title: 'Wahab',
       theme: AppTheme.light(),
       locale: const Locale('fa', 'IR'),
-      builder: (context, child) => Directionality(textDirection: TextDirection.rtl, child: child ?? const SizedBox()),
-      getPages: [
-        GetPage(name: '/', page: () => const _Root()),
-      ],
+      builder: (context, child) =>
+          Directionality(textDirection: TextDirection.rtl, child: child ?? const SizedBox()),
+      home: const _Root(),
     );
   }
 }
@@ -68,9 +70,13 @@ class _Root extends StatelessWidget {
       if (ac.isLoading.value) {
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       }
+
+      // اگر لاگین نیست => لاگین
       if (!ac.isAuthenticated) {
         return const LoginOrRegister();
       }
+
+      // اگر لاگین هست => هوم
       return const Home();
     });
   }

@@ -1,13 +1,13 @@
 // lib/screens/home.dart
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
+import '../controllers/auth_controller.dart';
 import '../controllers/product_controller.dart';
 import '../model/product.dart';
 import 'add.dart';
 import 'detail.dart';
+import 'login_or_register.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -22,7 +22,6 @@ class _HomeState extends State<Home> {
 
   final TextEditingController _searchCtrl = TextEditingController();
 
-  // اگر اسم گروپ‌ها در دیتای شما متفاوت است، این دو را تغییر بده
   static const String group1Name = 'گروپ اول';
   static const String group2Name = 'گروپ دوم';
 
@@ -33,21 +32,18 @@ class _HomeState extends State<Home> {
   }
 
   void _showOfflineMsg() {
-    Get.snackbar(
-      'آفلاین هستید',
-      'شما افلاین هستید ، اتصال خود را بررسی کنید',
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(10),
-      duration: const Duration(seconds: 2),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('شما افلاین هستید ، اتصال خود را بررسی کنید'),
+        backgroundColor: Colors.red.shade600,
+      ),
     );
   }
 
   void _onTabTap(int index) {
     final pc = Get.find<ProductController>();
 
-    // تب افزودن
     if (index == 3) {
-      // ✅ اگر آفلاین است اجازه افزودن نده
       if (!pc.isOnline.value) {
         _showOfflineMsg();
         return;
@@ -81,18 +77,49 @@ class _HomeState extends State<Home> {
     return filtered;
   }
 
+  Future<void> _logout() async {
+    final ac = Get.find<AuthController>();
+
+    try {
+      await ac.signOut();
+      Get.offAll(() => const LoginOrRegister());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('شما موفقانه از حساب خویش خارج شدید!'),
+          backgroundColor: Colors.green.shade600,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('خطا در خروج از سیستم!'),
+          backgroundColor: Colors.red.shade600,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final pc = Get.find<ProductController>();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
+        title: const Text('صفحه محصولات'),
         actions: [
+          // ✅ Logout بالا در AppBar
+          IconButton(
+            tooltip: 'Logout',
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+          ),
+
+          // Online/Sync icon
           Obx(() {
             return IconButton(
               onPressed: pc.forceSync,
-              icon: Icon(pc.isOnline.value ? Icons.cloud_sync : Icons.cloud_off),
+              icon:
+                  Icon(pc.isOnline.value ? Icons.cloud_sync : Icons.cloud_off),
             );
           }),
         ],
@@ -107,7 +134,8 @@ class _HomeState extends State<Home> {
               decoration: InputDecoration(
                 hintText: 'جستجو...',
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
@@ -144,14 +172,16 @@ class _HomeState extends State<Home> {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: selected ? Colors.grey.shade900 : Colors.grey.shade200,
+              color: selected ? Theme.of(context).primaryColor : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (icon != null) ...[
-                  Icon(icon, size: 18, color: selected ? Colors.white : Colors.black87),
+                  Icon(icon,
+                      size: 18,
+                      color: selected ? Colors.white : Colors.black87),
                   const SizedBox(width: 6),
                 ],
                 Text(
@@ -189,7 +219,8 @@ class _ProductCard extends StatelessWidget {
   const _ProductCard({required this.product});
   final Product product;
 
-  bool _isRemote(String s) => s.startsWith('http://') || s.startsWith('https://');
+  bool _isRemote(String s) =>
+      s.startsWith('http://') || s.startsWith('https://');
 
   @override
   Widget build(BuildContext context) {
@@ -207,31 +238,25 @@ class _ProductCard extends StatelessWidget {
 
       if (_isRemote(first)) {
         final cached = pc.cachedBytes(first);
-        if (cached != null) {
-          return Image.memory(cached, fit: BoxFit.cover);
-        }
-        return Image.network(
-          first,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
-        );
+        if (cached != null) return Image.memory(cached, fit: BoxFit.cover);
+        return Image.network(first,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const Icon(Icons.broken_image));
       }
 
-      final normalized = first.startsWith('file://') ? first.replaceFirst('file://', '') : first;
+      final normalized = first.startsWith('file://')
+          ? first.replaceFirst('file://', '')
+          : first;
 
       if (!File(normalized).existsSync()) {
         final cached = pc.cachedBytes(first);
-        if (cached != null) {
-          return Image.memory(cached, fit: BoxFit.cover);
-        }
+        if (cached != null) return Image.memory(cached, fit: BoxFit.cover);
         return const Icon(Icons.broken_image);
       }
 
-      return Image.file(
-        File(normalized),
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
-      );
+      return Image.file(File(normalized),
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const Icon(Icons.broken_image));
     }
 
     return InkWell(
@@ -254,9 +279,11 @@ class _ProductCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(product.title, style: const TextStyle(fontWeight: FontWeight.w900)),
+                  Text(product.title,
+                      style: const TextStyle(fontWeight: FontWeight.w900)),
                   const SizedBox(height: 4),
-                  Text(product.group, style: TextStyle(color: Colors.grey.shade700)),
+                  Text(product.group,
+                      style: TextStyle(color: Colors.grey.shade700)),
                 ],
               ),
             ),

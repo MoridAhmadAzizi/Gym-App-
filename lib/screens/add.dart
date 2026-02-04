@@ -210,8 +210,6 @@ class _AddState extends State<Add> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.grey[900],
-        iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           isEdit ? 'ویرایش محصول' : 'محصول جدید',
           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
@@ -284,7 +282,7 @@ class _AddState extends State<Add> {
               ElevatedButton.icon(
                 onPressed: (_imagePaths.length >= 10) ? null : _pickImages,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey.shade800,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
@@ -321,39 +319,42 @@ class _AddState extends State<Add> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: _imagePaths.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                separatorBuilder: (_, __) => const SizedBox(width: 0),
                 itemBuilder: (context, index) {
                   final path = _imagePaths[index];
-                  return SizedBox(
-                    width: 96,
-                    height: 96,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            color: Colors.grey.shade100,
-                            child: SizedBox.expand(child: _buildImageThumb(path)),
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 10, right: 10, left: 10),
+                    child: SizedBox(
+                      width: 96,
+                      height: 96,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              color: Colors.grey.shade100,
+                              child: SizedBox.expand(child: _buildImageThumb(path)),
+                            ),
                           ),
-                        ),
-                        Positioned(
-                          top: -10,
-                          right: -10,
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () => _removeImageAt(index),
-                              borderRadius: BorderRadius.circular(999),
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(color: Colors.black.withOpacity(0.65), shape: BoxShape.circle),
-                                child: const Icon(Icons.close, size: 16, color: Colors.white),
+                          Positioned(
+                            top: -10,
+                            right: -10,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => _removeImageAt(index),
+                                borderRadius: BorderRadius.circular(999),
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(color: Colors.black.withOpacity(0.65), shape: BoxShape.circle),
+                                  child: const Icon(Icons.close, size: 16, color: Colors.white),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -387,7 +388,7 @@ class _AddState extends State<Add> {
             maxLines: maxLines,
             decoration: InputDecoration(
               hintText: hint,
-              prefixIcon: Icon(icon, color: Colors.grey),
+              prefixIcon: Icon(icon, color: Theme.of(context).primaryColor),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(7), borderSide: BorderSide.none),
               filled: true,
               fillColor: Colors.white,
@@ -456,7 +457,7 @@ class _AddState extends State<Add> {
                   onSubmitted: (_) => _addTag(),
                   decoration: InputDecoration(
                     hintText: 'ابزار مورد نظر را وارد کنید.',
-                    prefixIcon: const Icon(Icons.tag, color: Colors.grey),
+                    prefixIcon: Icon(Icons.tag, color: Theme.of(context).primaryColor),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(7), borderSide: BorderSide.none),
                     filled: true,
                     fillColor: Colors.white,
@@ -467,7 +468,7 @@ class _AddState extends State<Add> {
             ),
             const SizedBox(width: 12),
             Container(
-              decoration: BoxDecoration(color: Colors.grey.shade800, borderRadius: BorderRadius.circular(7)),
+              decoration: BoxDecoration(color: Theme.of(context).primaryColor, borderRadius: BorderRadius.circular(7)),
               child: IconButton(onPressed: _addTag, icon: const Icon(Icons.add, color: Colors.white)),
             ),
           ],
@@ -531,7 +532,7 @@ class _AddState extends State<Add> {
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-                backgroundColor: Colors.grey[900],
+                backgroundColor: Theme.of(context).primaryColor,
                 elevation: 0,
               ),
               child: _isSaving

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../components/my_button.dart';
 import '../components/my_text_field.dart';
 import '../services/auth_service.dart';
+import 'home.dart';
 
 class LoginPage extends StatefulWidget {
   final void Function()? onTap;
@@ -50,6 +51,7 @@ class _LoginPageState extends State<LoginPage> {
       await Get.find<AuthService>().signInWithPassword(email: email, password: pass);
       if (!mounted) return;
       _snack('با موفقیت وارد شدید ', ok: true);
+      Get.offAll(() => const Home());
     } catch (_) {
       if (!mounted) return;
       _snack('ورود ناموفق!');
@@ -69,22 +71,21 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               children: [
                 Image.asset(
-                  'assets/images/sign.jpg',
+                  'assets/images/sign.png',
                   width: double.infinity,
-                  height: 290,
+                  height: 320,
                   fit: BoxFit.cover,
                 ),
-                const SizedBox(height: 20),
                 Text(
                   'خوش آمدید',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 20),
-                MyTextField(controller: _emailController, hintText: 'Email', obscureText: false),
+                MyTextField(controller: _emailController, hintText: 'ایمیل', obscureText: false),
                 const SizedBox(height: 10),
-                MyTextField(controller: _passwordController, hintText: 'Password', obscureText: true),
+                MyTextField(controller: _passwordController, hintText: 'پسورد', obscureText: true),
                 const SizedBox(height: 16),
-                MyButton(text: _loading ? '...' : 'Login', onTap: _loading ? null : _signIn),
+                MyButton(text: _loading ? '...' : 'ورود', onTap: _loading ? null : _signIn),
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

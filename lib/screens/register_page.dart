@@ -82,7 +82,7 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Column(
               children: [
                 Image.asset(
-                  'assets/images/sign.jpg',
+                  'assets/images/sign.png',
                   width: double.infinity,
                   height: 290,
                   fit: BoxFit.cover,
@@ -93,13 +93,13 @@ class _RegisterPageState extends State<RegisterPage> {
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 20),
-                MyTextField(controller: _emailController, hintText: 'Email', obscureText: false),
+                MyTextField(controller: _emailController, hintText: 'ایمیل', obscureText: false),
                 const SizedBox(height: 10),
-                MyTextField(controller: _passwordController, hintText: 'Password', obscureText: true),
+                MyTextField(controller: _passwordController, hintText: 'پسورد', obscureText: true),
                 const SizedBox(height: 10),
-                MyTextField(controller: _confirmPasswordController, hintText: 'Confirm Password', obscureText: true),
+                MyTextField(controller: _confirmPasswordController, hintText: 'تکرار پسورد', obscureText: true),
                 const SizedBox(height: 16),
-                MyButton(text: _loading ? '...' : 'Sign Up', onTap: _loading ? null : _signUp),
+                MyButton(text: _loading ? '...' : 'ثبت نام', onTap: _loading ? null : _signUp),
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

@@ -191,7 +191,7 @@ class _OtpPageState extends State<OtpPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Image.asset(
-                  'assets/images/otp.jpg',
+                  'assets/images/otp.png',
                   width: double.infinity,
                   height: 290,
                   fit: BoxFit.cover,
