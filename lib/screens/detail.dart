@@ -27,7 +27,8 @@ class _DetailState extends State<Detail> {
   final _slideDuration = const Duration(seconds: 4);
   final _animationDuration = const Duration(milliseconds: 550);
 
-  bool _isRemote(String s) => s.startsWith('http://') || s.startsWith('https://');
+  bool _isRemote(String s) =>
+      s.startsWith('http://') || s.startsWith('https://');
 
   @override
   void initState() {
@@ -86,7 +87,8 @@ class _DetailState extends State<Detail> {
 
     final created = widget.product.createdAt;
     final updated = widget.product.updatedAt;
-    final showEdited = updated != null && (created == null || updated.isAfter(created));
+    final showEdited =
+        updated != null && (created == null || updated.isAfter(created));
 
     return Scaffold(
       appBar: AppBar(
@@ -96,7 +98,8 @@ class _DetailState extends State<Detail> {
             final online = pc.isOnline.value;
             if (!online) return const SizedBox.shrink();
             return IconButton(
-              onPressed: () => Get.to(() => Add(initialProduct: widget.product)),
+              onPressed: () =>
+                  Get.to(() => Add(initialProduct: widget.product)),
               icon: const Icon(Icons.edit),
             );
           }),
@@ -109,7 +112,10 @@ class _DetailState extends State<Detail> {
           const SizedBox(height: 12),
           Text(
             widget.product.title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 6),
           Column(
@@ -118,37 +124,52 @@ class _DetailState extends State<Detail> {
               _chip(context, 'گروه: ${widget.product.group}'),
               const SizedBox(height: 7),
               if (created != null)
-                _chip(context, 'ایجاد: ${DateUtilsFa.dateYmd(created)} - ${DateUtilsFa.timeHm(created)}'),
+                _chip(context,
+                    'ایجاد: ${DateUtilsFa.dateYmd(created)} - ${DateUtilsFa.timeHm(created)}'),
               if (showEdited) ...[
                 const SizedBox(height: 7),
-                _chip(context, 'آخرین ویرایش: ${DateUtilsFa.dateYmd(updated)} - ${DateUtilsFa.timeHm(updated)}'),
+                _chip(context,
+                    'آخرین ویرایش: ${DateUtilsFa.dateYmd(updated)} - ${DateUtilsFa.timeHm(updated)}'),
               ],
             ],
           ),
           const SizedBox(height: 12),
-          Text('توضحیات', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+          Text('توضحیات',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w900)),
           const SizedBox(height: 8),
           if (widget.product.desc.isEmpty)
-            Center(child: _chip(context, 'توضیحاتی درباره این محصول وجود ندارد!'))
+            Center(
+                child: _chip(context, 'توضیحاتی درباره این محصول وجود ندارد!'))
           else
-            Text(widget.product.desc, style: Theme.of(context).textTheme.titleSmall),
+            Text(widget.product.desc,
+                style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 18),
-          Text('ابزارها', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+          Text('ابزارها',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w900)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 6,
             children: [
-              for (final t in widget.product.tools) _chip(context, t),
-              if (widget.product.tools.isEmpty) Center(child: _chip(context, 'هیچ کدام ابزاری هنوز اضافه نشده!')),
+              for (final text in widget.product.tools) _chip(context, text),
+              if (widget.product.tools.isEmpty)
+                Center(
+                    child: _chip(context, 'هیچ کدام ابزاری هنوز اضافه نشده!')),
             ],
           ),
           Obx(() => pc.isOnline.value
               ? const SizedBox()
               : const Padding(
-            padding: EdgeInsets.only(top: 12),
-            child: Text('شما افلاین هستید ، اتصال خود را بررسی کنید', style: TextStyle(color: Colors.red)),
-          )),
+                  padding: EdgeInsets.only(top: 12),
+                  child: Text('شما افلاین هستید ، اتصال خود را بررسی کنید',
+                      style: TextStyle(color: Colors.red)),
+                )),
         ],
       ),
     );
@@ -161,7 +182,9 @@ class _DetailState extends State<Detail> {
         color: Colors.grey.shade200,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700)),
+      child: Text(text,
+          style: const TextStyle(
+              fontWeight: FontWeight.w700,)),
     );
   }
 
@@ -232,7 +255,9 @@ class _DetailState extends State<Detail> {
           height: 8,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
-            color: isActive ? Theme.of(context).primaryColor : Colors.grey.shade400,
+            color: isActive
+                ? Theme.of(context).primaryColor
+                : Colors.grey.shade400,
           ),
         );
       }),
@@ -292,7 +317,9 @@ class _ImageItem extends StatelessWidget {
       );
     }
 
-    final normalized = imagePath.startsWith('file://') ? imagePath.replaceFirst('file://', '') : imagePath;
+    final normalized = imagePath.startsWith('file://')
+        ? imagePath.replaceFirst('file://', '')
+        : imagePath;
     final file = File(normalized);
 
     if (!file.existsSync()) {
@@ -323,7 +350,10 @@ class _ImageItem extends StatelessWidget {
     return Container(
       color: Colors.grey.shade100,
       child: const Center(
-        child: SizedBox(width: 30, height: 30, child: CircularProgressIndicator(strokeWidth: 2)),
+        child: SizedBox(
+            width: 30,
+            height: 30,
+            child: CircularProgressIndicator(strokeWidth: 2)),
       ),
     );
   }
@@ -331,7 +361,8 @@ class _ImageItem extends StatelessWidget {
   Widget _error() {
     return Container(
       color: Colors.grey.shade100,
-      child: const Center(child: Icon(Icons.broken_image, size: 60, color: Colors.grey)),
+      child: const Center(
+          child: Icon(Icons.broken_image, size: 60, color: Colors.grey)),
     );
   }
 }

@@ -145,7 +145,23 @@ class _HomeState extends State<Home> {
             child: Obx(() {
               final list = _applyFilters(pc.products);
               if (list.isEmpty) {
-                return const Center(child: Text('چیزی پیدا نشد'));
+                return SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: Center(
+                      child: Column(
+                    children: [
+                      Image.asset(
+                        'assets/images/data.png',
+                        width: MediaQuery.of(context).size.width,
+                        height: 290,
+                      ),
+                      const Text(
+                        'چیزی پیدا نشد ، کلمه دیگری را جستجو کنید!',
+                        style: TextStyle(fontSize: 16),
+                      )
+                    ],
+                  )),
+                );
               }
               return ListView.separated(
                 padding: const EdgeInsets.all(16),
@@ -172,7 +188,9 @@ class _HomeState extends State<Home> {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: selected ? Theme.of(context).primaryColor : Colors.grey.shade200,
+              color: selected
+                  ? Theme.of(context).primaryColor
+                  : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -270,9 +288,16 @@ class _ProductCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SizedBox(width: 70, height: 70, child: thumb()),
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                  border: Border.all(
+                      width: 1, color: Theme.of(context).primaryColor),
+                  borderRadius: BorderRadius.circular(8)),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(7),
+                child: SizedBox(width: 65, height: 65, child: thumb()),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(

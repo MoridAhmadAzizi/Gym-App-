@@ -480,12 +480,12 @@ class _AddState extends State<Add> {
             runSpacing: 10,
             children: List.generate(_tags.length, (index) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(7)),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(999)),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(_tags[index], style: TextStyle(color: Colors.grey[800], fontWeight: FontWeight.w800, fontSize: 16)),
+                    Text(_tags[index], style: TextStyle(color: Colors.grey[800], fontWeight: FontWeight.w800,fontSize: 13)),
                     const SizedBox(width: 6),
                     GestureDetector(onTap: () => _removeTag(index), child: Icon(Icons.close, size: 16, color: Colors.grey[900])),
                   ],
