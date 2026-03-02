@@ -1,4 +1,7 @@
+import 'package:events/core/extension/navigator_extension.dart';
 import 'package:events/core/widgets/cached_image.dart';
+import 'package:events/features/auth/services/auth_service.dart';
+import 'package:events/features/auth/ui/login_page.dart';
 import 'package:events/features/events/cubit/event_cubit.dart';
 import 'package:events/features/events/model/event_model.dart';
 import 'package:events/features/events/repository/event_repository.dart';
@@ -8,6 +11,7 @@ import 'package:events/features/events/ui/widgets/tabs_widget.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class EventScreen extends StatefulWidget {
   const EventScreen({super.key});
@@ -34,38 +38,37 @@ class _EventScreenState extends State<EventScreen> {
     );
   }
 
-  // Future<void> _logout() async {
-  //   // final ac = Get.find<AuthController>();
-  //
-  //   try {
-  //     // await ac.signOut();
-  //     // Get.offAll(() => const LoginOrRegister());
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: const Text('شما موفقانه از حساب خویش خارج شدید!'),
-  //         backgroundColor: Colors.green.shade600,
-  //       ),
-  //     );
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: const Text('خطا در خروج از سیستم!'),
-  //         backgroundColor: Colors.red.shade600,
-  //       ),
-  //     );
-  //   }
-  // }
+  Future<void> _logout(SupabaseClient supabase) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('شما موفقانه از حساب خویش خارج شدید!'),
+          backgroundColor: Colors.green.shade600,
+        ),
+      );
+      AuthService(supabase).signOut();
+      context.navigatorPushAndRemoveUntil(const LoginPage());
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('خطا در خروج از سیستم!'),
+          backgroundColor: Colors.red.shade600,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final eventRepository = context.read<EventRepository>();
     final eventServices = EventServices(eventRepository);
-
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
     return Scaffold(
       appBar: AppBar(
         title: const Text('صفحه برنامه ها'),
         actions: [
-          if (kDebugMode)
+          if (!kDebugMode)
             InkWell(
               onTap: () async {
                 await eventServices.deleteAll();
@@ -77,7 +80,17 @@ class _EventScreenState extends State<EventScreen> {
                 Icons.delete,
                 color: Colors.red,
               ),
-            )
+            ),
+          if (user != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: InkWell(
+                onTap: () => _logout(supabase),
+                child: const Icon(
+                  Icons.logout_rounded,
+                ),
+              ),
+            ),
         ],
       ),
       body: SafeArea(
@@ -102,9 +115,12 @@ class _EventScreenState extends State<EventScreen> {
                     // ),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: TabsWidget(onNewEventAdded: (_) {
-                        context.read<EventCubit>().reload();
-                      }),
+                      child: TabsWidget(
+                          onNewEventAdded: user != null
+                              ? (_) {
+                                  context.read<EventCubit>().reload();
+                                }
+                              : null),
                     ),
                     const SizedBox(height: 6),
                     const Expanded(child: EventsList()),

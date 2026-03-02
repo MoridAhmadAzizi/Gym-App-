@@ -4,14 +4,15 @@ import 'package:events/features/add_new_event/ui/widgets/attachment_widget_with_
 import 'package:events/features/events/model/event_model.dart';
 import 'package:events/features/events/ui/widgets/image_slider.dart';
 import 'package:events/utils/date_utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class EventDetailScreen extends StatefulWidget {
   const EventDetailScreen({super.key, required this.eventModel, this.onUpdated});
   final EventModel eventModel;
   final VoidCallback? onUpdated;
-
 
   @override
   State<EventDetailScreen> createState() => _EventDetailScreenState();
@@ -43,24 +44,26 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.sizeOf(context);
+    final user = Supabase.instance.client.auth.currentUser;
     return Scaffold(
       appBar: AppBar(
         title: const Text('جزئیات برنامه'),
         actions: [
-          InkWell(
-            onTap: () {
-              context.navigatorPush(AddEventScreen(
-                  eventToUpdate: eventModelNotifier.value,
-                  onAdded: (postedEvent) {
-                    widget.onUpdated?.call();
-                    eventModelNotifier.value = postedEvent;
-                  }));
-            },
-            child: const Padding(
-              padding: EdgeInsets.all(10),
-              child: Icon(Icons.edit_rounded),
+          if (user != null || kDebugMode)
+            InkWell(
+              onTap: () {
+                context.navigatorPush(AddEventScreen(
+                    eventToUpdate: eventModelNotifier.value,
+                    onAdded: (postedEvent) {
+                      widget.onUpdated?.call();
+                      eventModelNotifier.value = postedEvent;
+                    }));
+              },
+              child: const Padding(
+                padding: EdgeInsets.all(10),
+                child: Icon(Icons.edit_rounded),
+              ),
             ),
-          ),
         ],
       ),
       body: ValueListenableBuilder(

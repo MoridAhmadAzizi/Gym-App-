@@ -1,21 +1,20 @@
-// lib/services/auth_service.dart
-import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthService {
   AuthService(this._client);
 
-  final sb.SupabaseClient _client;
+  final SupabaseClient _client;
 
-  sb.Session? get session => _client.auth.currentSession;
-  sb.User? get currentUser => _client.auth.currentUser;
+  Session? get session => _client.auth.currentSession;
+  User? get currentUser => _client.auth.currentUser;
 
-  Stream<sb.AuthState> get authStateChanges => _client.auth.onAuthStateChange;
+  Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
 
-  Future<void> signInWithPassword({
+  Future<AuthResponse> signInWithPassword({
     required String email,
     required String password,
   }) async {
-    await _client.auth.signInWithPassword(email: email, password: password);
+    return await _client.auth.signInWithPassword(email: email, password: password);
   }
 
   Future<void> signUpAndSendOtp({
@@ -25,12 +24,12 @@ class AuthService {
     await _client.auth.signUp(email: email, password: password);
   }
 
-  Future<sb.AuthResponse> verifySignupOtp({
+  Future<AuthResponse> verifySignupOtp({
     required String email,
     required String token,
   }) async {
     return _client.auth.verifyOTP(
-      type: sb.OtpType.signup,
+      type: OtpType.signup,
       email: email,
       token: token,
     );
@@ -40,7 +39,7 @@ class AuthService {
     required String email,
   }) async {
     await _client.auth.resend(
-      type: sb.OtpType.signup,
+      type: OtpType.signup,
       email: email,
     );
   }

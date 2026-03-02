@@ -1,12 +1,14 @@
+import 'package:events/core/extension/navigator_extension.dart';
 import 'package:events/core/widgets/my_button.dart';
 import 'package:events/core/widgets/my_text_field.dart';
 import 'package:events/features/auth/services/auth_service.dart';
+import 'package:events/features/events/ui/event_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginPage extends StatefulWidget {
   final void Function()? onTap;
-  const LoginPage({super.key, required this.onTap});
+  const LoginPage({super.key, this.onTap});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -24,39 +26,23 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void snack(String msg, {bool ok = false}) {
+  void snack(String msg, {bool success = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: ok ? Colors.green.shade600 : Colors.red.shade600,
+        backgroundColor: success ? Colors.green.shade600 : Colors.red.shade600,
       ),
     );
   }
 
   Future<void> _signIn() async {
-    AuthService(Supabase.instance.client).signInWithPassword(email: _emailController.text, password: _passwordController.text);
-    // if (_loading) return;
-    //
-    // final email = _emailController.text.trim();
-    // final pass = _passwordController.text;
-    //
-    // if (email.isEmpty || pass.isEmpty) {
-    //   _snack('ایمیل و پسورد را وارد کنید');
-    //   return;
-    // }
-    //
-    // setState(() => _loading = true);
-    // try {
-    //   await Get.find<AuthService>().signInWithPassword(email: email, password: pass);
-    //   if (!mounted) return;
-    //   _snack('با موفقیت وارد شدید ', ok: true);
-    //   Get.offAll(() => const Home());
-    // } catch (_) {
-    //   if (!mounted) return;
-    //   _snack('ورود ناموفق!');
-    // } finally {
-    //   if (mounted) setState(() => _loading = false);
-    // }
+    final response = await AuthService(Supabase.instance.client).signInWithPassword(email: _emailController.text, password: _passwordController.text);
+    if (response.user != null) {
+      snack('موفقانه وارد شده اید', success: true);
+      if (mounted) {
+        context.navigatorPushAndRemoveUntil(const EventScreen());
+      }
+    }
   }
 
   @override

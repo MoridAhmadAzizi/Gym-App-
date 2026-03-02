@@ -1,4 +1,5 @@
 import 'package:events/core/extension/navigator_extension.dart';
+import 'package:events/features/auth/ui/login_page.dart';
 import 'package:events/features/events/cubit/event_cubit.dart';
 import 'package:events/features/events/model/event_model.dart';
 import 'package:events/features/add_new_event/ui/add_event_screen.dart';
@@ -28,6 +29,10 @@ class TabsWidget extends StatelessWidget {
               index: 3,
               icon: Icons.add,
               onTap: () {
+                if (onNewEventAdded == null) {
+                  context.navigatorPushAndRemoveUntil(const LoginPage());
+                  return;
+                }
                 context.navigatorPush(AddEventScreen(onAdded: onNewEventAdded));
               }),
         ],
