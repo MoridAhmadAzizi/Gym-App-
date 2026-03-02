@@ -1,7 +1,13 @@
+import 'dart:convert';
+
 import 'package:bloc/bloc.dart';
 import 'package:events/features/add_new_event/services/add_event_service.dart';
+import 'package:events/features/add_new_event/ui/widgets/attachment_widget.dart';
+import 'package:events/features/events/model/attachments_model.dart';
 import 'package:events/features/events/model/event_model.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as paths;
+
 import 'package:image_picker/image_picker.dart';
 
 part 'add_event_state.dart';
@@ -11,6 +17,8 @@ class AddEventCubit extends Cubit<AddEventState> {
   final EventModel eventModel;
   bool saving = false;
   bool pickingImage = false;
+  bool attachingFiles = false;
+  bool sharing = false;
   EventModel get stateEvent => state.eventModel;
 
   EventModel addImages(List<String> imagePath) {
@@ -46,6 +54,46 @@ class AddEventCubit extends Cubit<AddEventState> {
     }
     pickingImage = false;
     final updatedEvent = stateEvent.copyWith(imagePaths: imageList);
+    emit(EventUpdating(updatedEvent));
+  }
+
+  Future<void> attachFiles() async {
+    if (attachingFiles) return;
+    attachingFiles = true;
+    final picker = ImagePicker();
+    final attachmentsList = List<AttachmentsModel>.from(stateEvent.attachments);
+    final List<XFile> attachments = await picker.pickMultipleMedia();
+    if (attachments.isEmpty) {
+      attachingFiles = false;
+      return;
+    }
+
+    for (final file in attachments) {
+      final path = file.path;
+      if (attachmentsList.length >= AttachmentWidgets.attachmentLimit) break;
+      if (!attachmentsList.any((attachment) => attachment.path == path || attachment.fullName == file.name)) {
+        final extension = paths.extension(path).replaceFirst('.', '');
+        final fileName = paths.withoutExtension(file.name);
+
+        final attach = AttachmentsModel(path: path, dataType: extension, name: fileName);
+        attachmentsList.add(attach);
+      }
+    }
+    attachingFiles = false;
+    final mappedAttachments = attachmentsList.map((attach) => attach.toJson()).toList();
+    final decodedAttachments = jsonEncode(mappedAttachments);
+    final updatedEvent = stateEvent.copyWith(dbAttachment: decodedAttachments);
+    emit(EventUpdating(updatedEvent));
+  }
+
+  void removeAttachmentFromList(int index) {
+    if (stateEvent.dbAttachment.isEmpty) return;
+    final List<dynamic> decodedList = jsonDecode(stateEvent.dbAttachment);
+    final List<AttachmentsModel> attachmentsList = decodedList.map((e) => AttachmentsModel.fromJson(e)).toList();
+    if (index < 0 || index >= attachmentsList.length) return;
+    attachmentsList.removeAt(index);
+    final updatedJson = jsonEncode(attachmentsList.map((e) => e.toJson()).toList());
+    final updatedEvent = stateEvent.copyWith(dbAttachment: updatedJson);
     emit(EventUpdating(updatedEvent));
   }
 

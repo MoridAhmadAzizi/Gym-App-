@@ -1,3 +1,4 @@
+
 import 'package:events/features/events/model/event_model.dart';
 import 'dart:developer' as developer;
 import 'package:events/features/events/repository/event_repository.dart';
@@ -10,8 +11,10 @@ class EventServices {
   Future<List<EventModel>> fetchEventsFromServer() async {
     try {
       final supabase = Supabase.instance.client;
-      final data =
-          await supabase.from(SupabaseConfig.productColumn).select('id,title,description,type,tools,image_paths,created_at,updated_at, status');
+      final data = await supabase
+          .from(SupabaseConfig.productColumn)
+          .select('id,title,description,type,tools,image_paths,created_at,updated_at,attachments, status');
+
       final events = data.map(EventModel.formJson).where((event) => event.status != EventStatus.deleted.status).toList();
       await eventRepository.storeEvents(events);
       return events;

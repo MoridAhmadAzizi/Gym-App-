@@ -1,5 +1,6 @@
 import 'package:events/core/extension/navigator_extension.dart';
 import 'package:events/features/add_new_event/cubit/add_event_cubit.dart';
+import 'package:events/features/add_new_event/ui/widgets/attachment_widget.dart';
 import 'package:events/features/add_new_event/ui/widgets/button_section.dart';
 import 'package:events/features/add_new_event/ui/widgets/event_type_selector.dart';
 import 'package:events/features/add_new_event/ui/widgets/image_picker.dart';
@@ -86,26 +87,24 @@ class _AddEventScreenState extends State<AddEventScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(20),
                       child: Column(
+                        spacing: 20,
                         children: [
                           ImagePickerWidget(state.eventModel.imagePaths),
-                          const SizedBox(height: 24),
                           _buildTextField(
-                            label: 'نام محصول',
+                            label: 'نام برنامه',
                             icon: Icons.badge_outlined,
                             controller: _titleTextController,
-                            hint: 'نام محصول را وارد کنید',
+                            hint: 'نام برنامه را وارد کنید',
                           ),
-                          const SizedBox(height: 20),
                           EventTypeSelector(eventType: state.eventModel.type),
-                          const SizedBox(height: 20),
                           ToolSelector(state.eventModel.tools),
-                          const SizedBox(height: 20),
+                          AttachmentWidgets(state.eventModel.attachments),
                           _buildTextField(
                             label: 'توضیحات',
                             textType: TextInputType.multiline,
                             icon: Icons.description_outlined,
                             controller: _descriptionTextController,
-                            hint: 'توضیحات محصول (اختیاری)',
+                            hint: 'توضیحات برنامه (اختیاری)',
                             height: 250,
                           ),
                           const SizedBox(height: 80),

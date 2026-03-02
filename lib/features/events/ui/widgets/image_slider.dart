@@ -28,7 +28,6 @@ class _ImageSliderState extends State<ImageSlider> {
   int _currentIndex = 0;
   @override
   void didUpdateWidget(covariant ImageSlider oldWidget) {
-    debugPrint('deventaDDED imageLisder: ${widget.images.length}');
     super.didUpdateWidget(oldWidget);
   }
 

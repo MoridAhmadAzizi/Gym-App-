@@ -22,7 +22,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
     id: const obx_int.IdUid(1, 2006261101140995514),
     name: 'EventModel',
-    lastPropertyId: const obx_int.IdUid(10, 358585546820936239),
+    lastPropertyId: const obx_int.IdUid(12, 1739302062051705700),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
@@ -79,6 +79,12 @@ final _entities = <obx_int.ModelEntity>[
         type: 6,
         flags: 0,
       ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(12, 1739302062051705700),
+        name: 'dbAttachment',
+        type: 9,
+        flags: 0,
+      ),
     ],
     relations: <obx_int.ModelRelation>[],
     backlinks: <obx_int.ModelBacklink>[],
@@ -129,7 +135,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
     retiredIndexUids: const [],
-    retiredPropertyUids: const [5643504947583391236],
+    retiredPropertyUids: const [5643504947583391236, 2234754668426064645],
     retiredRelationUids: const [],
     modelVersion: 5,
     modelVersionParserMinimum: 5,
@@ -154,7 +160,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final toolsOffset = fbb.writeList(
           object.tools.map(fbb.writeString).toList(growable: false),
         );
-        fbb.startTable(11);
+        final dbAttachmentOffset = fbb.writeString(object.dbAttachment);
+        fbb.startTable(13);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, titleOffset);
         fbb.addOffset(3, descOffset);
@@ -164,6 +171,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         fbb.addInt64(7, object.updatedAt?.millisecondsSinceEpoch);
         fbb.addInt64(8, object.type);
         fbb.addInt64(9, object.status);
+        fbb.addOffset(11, dbAttachmentOffset);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -212,6 +220,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
           fb.StringReader(asciiOptimization: true),
           lazy: false,
         ).vTableGet(buffer, rootOffset, 12, []);
+        final dbAttachmentParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 26, '');
         final createdAtParam = createdAtValue == null
             ? null
             : DateTime.fromMillisecondsSinceEpoch(createdAtValue);
@@ -226,6 +237,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           status: statusParam,
           tools: toolsParam,
           imagePaths: imagePathsParam,
+          dbAttachment: dbAttachmentParam,
           createdAt: createdAtParam,
           updatedAt: updatedAtParam,
         );
@@ -283,5 +295,10 @@ class EventModel_ {
   /// See [EventModel.status].
   static final status = obx.QueryIntegerProperty<EventModel>(
     _entities[0].properties[8],
+  );
+
+  /// See [EventModel.dbAttachment].
+  static final dbAttachment = obx.QueryStringProperty<EventModel>(
+    _entities[0].properties[9],
   );
 }

@@ -36,10 +36,8 @@ class CachedImageState extends State<CachedImage> {
         File(widget.url),
       );
     }
-    debugPrint('isRemote image: ${widget.url}');
     if (!_isRemote) {
       final file = await fs.getImageFile(widget.url);
-      debugPrint('relativePath is: ${file.path}');
 
       if (await file.exists()) {
         // Check if file is empty to prevent "LocalFile is empty" crash

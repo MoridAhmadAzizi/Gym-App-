@@ -14,7 +14,7 @@ class EventTypeSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('گروپ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Colors.black87)),
+        const Text('بخش', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Colors.black87)),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),

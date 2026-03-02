@@ -86,20 +86,19 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 16),
                 MyButton(text: _loading ? '...' : 'ورود', onTap: _loading ? null : _signIn),
                 const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('حساب ندارید؟'),
-                    const SizedBox(width: 4),
-                    InkWell(
-                      onTap: () {
-                        final supabase = Supabase.instance.client.auth.currentUser;
-                        debugPrint('user data is: $supabase');
-                      },
-                      child: Text('ثبت نام', style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.w800)),
-                    ),
-                  ],
-                ),
+                // const Row(
+                //   mainAxisAlignment: MainAxisAlignment.center,
+                //   children: [
+                //     Text('حساب ندارید؟'),
+                //     SizedBox(width: 4),
+                //     // InkWell(
+                //     //   onTap: () {
+                //     //     final supabase = Supabase.instance.client.auth.currentUser;
+                //     //   },
+                //     //   child: Text('ثبت نام', style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.w800)),
+                //     // ),
+                //   ],
+                // ),
               ],
             ),
           ),

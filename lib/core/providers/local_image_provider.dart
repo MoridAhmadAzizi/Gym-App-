@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
 import 'package:events/core/providers/remote_image_provider.dart';
+import 'package:file/file.dart';
 import 'package:image/image.dart';
 
-import 'package:file/file.dart';
 import 'local_path_provider.dart';
 
 class LocalImageProvider {
@@ -20,21 +20,21 @@ class LocalImageProvider {
   late final LocalPathProvider pathBuilder;
 
   Future<File> getImageFile(String imagePath) async {
-    return pathBuilder.getFileFromStorage(imagePath);
+    return pathBuilder.getImageFromStorage(imagePath);
   }
 
   //Saves images on device, accepts fullpath to image or url, but takes only filename from it
-  Future<String> save(String imagePath) async {
+  Future<String> saveImage(String imagePath) async {
     final image = await remoteImageProvider.getImage(imagePath);
     final encodedPng = encodePng(image);
 
-    return _saveFile(encodedPng, imagePath: imagePath);
+    return _saveImage(encodedPng, imagePath: imagePath);
   }
 
-  Future<String> _saveFile(Uint8List encodedPng, {String? imagePath, Future<File> Function()? fileGenerator}) async {
+  Future<String> _saveImage(Uint8List encodedPng, {String? imagePath, Future<File> Function()? fileGenerator}) async {
     assert(imagePath != null || fileGenerator != null, 'Either imagePath or fileGenerator must be provided');
 
-    final imageFile = await (fileGenerator?.call() ?? pathBuilder.getFileFromStorage(imagePath!));
+    final imageFile = await (fileGenerator?.call() ?? pathBuilder.getImageFromStorage(imagePath!));
 
     // Ensure the destination directory exists, but do not create/overwrite the final file yet.
     await imageFile.parent.create(recursive: true);
@@ -70,5 +70,45 @@ class LocalImageProvider {
     }
 
     return imageFile.path;
+  }
+
+  Future<String> saveAttachment(String attachmentPath) async {
+    final attachmentToSave = await remoteImageProvider.getAttachment(attachmentPath);
+
+    return _saveAttachment(attachmentFile: attachmentToSave, attachmentPath: attachmentPath);
+  }
+
+  Future<String> _saveAttachment({required File attachmentFile, required String attachmentPath}) async {
+    final attachment = await pathBuilder.getAttachmentFromStorage(attachmentPath);
+
+    await attachment.parent.create(recursive: true);
+    final tempFile = fs.file('${attachment.path}.tmp.${DateTime.now().microsecondsSinceEpoch}');
+    final bytes = await attachmentFile.readAsBytes();
+    await tempFile.writeAsBytes(bytes, flush: true);
+
+    const maxAttempts = 5;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await tempFile.rename(attachment.path);
+        break;
+      } catch (_) {
+        try {
+          if (await attachment.exists()) {
+            await attachment.delete();
+          }
+        } catch (_) {
+          // Ignore; we'll backoff and retry.
+        }
+
+        if (attempt == maxAttempts) {
+          rethrow;
+        }
+
+        // Exponential backoff: 50ms, 100ms, 150ms, ...
+        await Future<void>.delayed(Duration(milliseconds: 50 * attempt));
+      }
+    }
+
+    return attachment.path;
   }
 }

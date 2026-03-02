@@ -5,6 +5,7 @@ import 'package:events/features/events/repository/event_repository.dart';
 import 'package:events/features/events/services/event_services.dart';
 import 'package:events/features/events/ui/event_detail_screen.dart';
 import 'package:events/features/events/ui/widgets/tabs_widget.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -64,16 +65,19 @@ class _EventScreenState extends State<EventScreen> {
       appBar: AppBar(
         title: const Text('صفحه برنامه ها'),
         actions: [
-          InkWell(
-            onTap: () async {
-              await eventServices.deleteAll();
-              context.read<EventRepository>().deleteAll();
-            },
-            child: Icon(
-              Icons.delete,
-              color: Colors.red,
-            ),
-          )
+          if (kDebugMode)
+            InkWell(
+              onTap: () async {
+                await eventServices.deleteAll();
+                if (context.mounted) {
+                  context.read<EventRepository>().deleteAll();
+                }
+              },
+              child: const Icon(
+                Icons.delete,
+                color: Colors.red,
+              ),
+            )
         ],
       ),
       body: SafeArea(
@@ -98,10 +102,8 @@ class _EventScreenState extends State<EventScreen> {
                     // ),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: TabsWidget(onNewEventAdded: (_) async {
-                        if (context.mounted) {
-                          context.read<EventCubit>().reload();
-                        }
+                      child: TabsWidget(onNewEventAdded: (_) {
+                        context.read<EventCubit>().reload();
                       }),
                     ),
                     const SizedBox(height: 6),
@@ -180,7 +182,15 @@ class EventCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => EventDetailScreen(eventModel: eventModel)));
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => EventDetailScreen(
+                      eventModel: eventModel,
+                      onUpdated: () {
+                        context.read<EventCubit>().reload();
+                      },
+                    )));
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -198,7 +208,7 @@ class EventCard extends StatelessWidget {
                   decoration:
                       BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(width: 1.5, color: Theme.of(context).primaryColor)),
                   child: Padding(
-                    padding: EdgeInsets.all(1),
+                    padding: const EdgeInsets.all(1),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(7),
                       child: SizedBox(width: 65, height: 65, child: thumb()),

@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:2006261101140995514",
-      "lastPropertyId": "10:358585546820936239",
+      "lastPropertyId": "12:1739302062051705700",
       "name": "EventModel",
       "properties": [
         {
@@ -53,6 +53,11 @@
           "id": "10:358585546820936239",
           "name": "status",
           "type": 6
+        },
+        {
+          "id": "12:1739302062051705700",
+          "name": "dbAttachment",
+          "type": 9
         }
       ],
       "relations": []
@@ -67,7 +72,8 @@
   "retiredEntityUids": [],
   "retiredIndexUids": [],
   "retiredPropertyUids": [
-    5643504947583391236
+    5643504947583391236,
+    2234754668426064645
   ],
   "retiredRelationUids": [],
   "version": 1

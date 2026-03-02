@@ -9,7 +9,6 @@ class ButtonSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isSaving = isPosting;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
@@ -18,9 +17,12 @@ class ButtonSection extends StatelessWidget {
           BoxShadow(color: Colors.grey.withAlpha(80), blurRadius: 10, offset: const Offset(0, -1)),
         ],
       ),
-      child: isSaving
+      child: isPosting
           ? const Center(
-              child: CircularProgressIndicator(),
+              child: Padding(
+                padding: EdgeInsets.all(5),
+                child: CircularProgressIndicator(),
+              ),
             )
           : Row(
               spacing: 10,
@@ -40,7 +42,7 @@ class ButtonSection extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      if (!isSaving) {
+                      if (!isPosting) {
                         onSubmit?.call();
                       }
                     },

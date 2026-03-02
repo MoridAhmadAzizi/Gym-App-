@@ -1,3 +1,4 @@
+
 import 'package:file/file.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -8,6 +9,7 @@ class LocalPathProvider {
   );
 
   static const eventImagesFolder = 'eventImages';
+  static const attachmentsFolder = 'attachments';
   static const cacheFolder = 'cache';
 
   final FileSystem fs;
@@ -17,17 +19,28 @@ class LocalPathProvider {
     return fs.directory(documentDirectory).childDirectory(eventImagesFolder);
   }
 
-  Future<File> getFileFromStorage(String path) async {
-    final strippedPath = relativePath(path);
+  Future<File> getImageFromStorage(String path) async {
+    final strippedPath = relativePath(path, eventImagesFolder);
     final storagePath = await getImageStorageFolder();
     return storagePath.childFile(strippedPath);
   }
 
-  String relativePath(String path) {
+  Future<Directory> getAttachmentStorageFolder() async {
+    final documentDirectory = await getDownloadsDirectory();
+    return fs.directory(documentDirectory).childDirectory(attachmentsFolder);
+  }
+
+  Future<File> getAttachmentFromStorage(String path) async {
+    final strippedPath = relativePath(path, attachmentsFolder);
+    final storagePath = await getAttachmentStorageFolder();
+    return storagePath.childFile(strippedPath);
+  }
+
+  String relativePath(String path, String folder) {
     final uri = Uri.parse(path);
-    final startOfAbsolutePath = path.indexOf(eventImagesFolder);
+    final startOfAbsolutePath = path.indexOf(folder);
     if (startOfAbsolutePath > -1) {
-      return path.substring(startOfAbsolutePath + eventImagesFolder.length + 1);
+      return path.substring(startOfAbsolutePath + folder.length + 1);
     } else if (!uri.hasAbsolutePath) {
       return path;
     } else if (uri.hasScheme && (uri.isScheme('http') || uri.isScheme('https'))) {

@@ -35,7 +35,7 @@ class _ToolSelectorState extends State<ToolSelector> {
                   controller: toolTextController,
                   onSubmitted: (toolText) => addEventCubit.addTool(toolText),
                   decoration: InputDecoration(
-                    hintText: 'ابزار مورد نظر را وارد کنید.',
+                    hintText: 'ابزار مورد نظر را وارد کنید',
                     prefixIcon: Icon(Icons.tag, color: Theme.of(context).primaryColor),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(7), borderSide: BorderSide.none),
                     filled: true,

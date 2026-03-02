@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:developer' as developer;
+import 'package:events/features/events/model/attachments_model.dart';
 import 'package:events/features/events/model/event_model.dart';
 import 'package:events/supabase_config.dart';
 import 'package:events/utils/image_utils.dart';
@@ -24,7 +26,6 @@ class AddEventService {
 
       final normalized = img.startsWith('file://') ? img.replaceFirst('file://', '') : img;
       if (!File(normalized).existsSync()) continue;
-    developer.log('caching uploadingImage path: $img');
       final bytes = await ImageUtils.compressToJpegBytes(normalized);
       final path = '${eventId}_${DateTime.now().millisecondsSinceEpoch}_$i.jpeg';
 
@@ -43,6 +44,43 @@ class AddEventService {
     }
 
     return imageUrls;
+  }
+
+  Future<String> uploadAttachmentsIfNeeded({required int eventId, required List<AttachmentsModel> attachments}) async {
+    final supabase = Supabase.instance.client;
+
+    final atthachmentsUrl = <AttachmentsModel>[];
+    final storage = supabase.storage.from(SupabaseConfig.attachmentsBucket);
+
+    for (var i = 0; i < attachments.length; i++) {
+      final attachment = attachments[i];
+      final attachmentPath = attachment.path;
+      if (attachmentPath.isEmpty) continue;
+      if (_isRemoteUrl(attachmentPath)) {
+        atthachmentsUrl.add(attachment);
+        continue;
+      }
+
+      final normalized = attachmentPath.startsWith('file://') ? attachmentPath.replaceFirst('file://', '') : attachmentPath;
+      final localeFile = File(normalized);
+      if (!localeFile.existsSync()) continue;
+      final path = '$eventId/${attachment.name}.${attachment.dataType}';
+      await storage.upload(
+        path,
+        localeFile,
+        fileOptions: const FileOptions(
+          cacheControl: '3600',
+          upsert: true,
+        ),
+      );
+
+      final publicUrl = storage.getPublicUrl(path);
+      final updatedAttachment = attachment.copyWith(path: publicUrl);
+      atthachmentsUrl.add(updatedAttachment);
+    }
+    final mapped = AttachmentsModel.listToJson(atthachmentsUrl);
+    final encoded = jsonEncode(mapped);
+    return encoded;
   }
 
   Future<EventModel?> upsert(EventModel eventModel) async {
@@ -67,6 +105,7 @@ class AddEventService {
         eventId: eventModel.id,
         images: eventModel.imagePaths,
       );
+      final attachment = await uploadAttachmentsIfNeeded(eventId: eventModel.id, attachments: eventModel.attachments);
 
       final inserted = await supabaseClient
           .from('products')
@@ -77,15 +116,13 @@ class AddEventService {
             'status': eventModel.status,
             'tools': eventModel.tools,
             'image_paths': urls,
+            'attachments': attachment,
           })
-          .select('id,title,description,type,tools,image_paths,created_at,updated_at')
+          .select('id,title,description,type,tools,image_paths,attachments,created_at,updated_at')
           .single();
 
       final postedEvent = EventModel.formJson(inserted);
-      developer.log('positing event is: ${postedEvent.toMap()}');
 
-      // _upsertLocalCache(product, isDirty: false);
-      // await _cacheImagesForProduct(product);
       return postedEvent;
     } catch (e) {
       developer.log('posting new event error is: $e}');
@@ -101,6 +138,8 @@ class AddEventService {
       eventId: eventModel.id,
       images: eventModel.imagePaths,
     );
+    final attachment = await uploadAttachmentsIfNeeded(eventId: eventModel.id, attachments: eventModel.attachments);
+
     final updatedEvent = eventModel.copyWith(imagePaths: urls);
     final postedData = await supabase
         .from('products')
@@ -111,9 +150,10 @@ class AddEventService {
           'tools': updatedEvent.tools,
           'status': updatedEvent.status,
           'image_paths': urls,
+          'attachments': attachment,
         })
         .eq('id', updatedEvent.id)
-        .select('id,title,description,type,tools,image_paths,created_at,updated_at');
+        .select('id,title,description,type,tools,image_paths,attachments,created_at,updated_at');
     developer.log('postedData is: $postedData} ${updatedEvent.title}');
     return updatedEvent;
   }

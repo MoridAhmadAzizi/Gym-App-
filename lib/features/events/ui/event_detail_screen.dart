@@ -1,13 +1,17 @@
 import 'package:events/core/extension/navigator_extension.dart';
 import 'package:events/features/add_new_event/ui/add_event_screen.dart';
+import 'package:events/features/add_new_event/ui/widgets/attachment_widget_with_type.dart';
 import 'package:events/features/events/model/event_model.dart';
 import 'package:events/features/events/ui/widgets/image_slider.dart';
 import 'package:events/utils/date_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 
 class EventDetailScreen extends StatefulWidget {
+  const EventDetailScreen({super.key, required this.eventModel, this.onUpdated});
   final EventModel eventModel;
-  const EventDetailScreen({super.key, required this.eventModel});
+  final VoidCallback? onUpdated;
+
 
   @override
   State<EventDetailScreen> createState() => _EventDetailScreenState();
@@ -23,10 +27,22 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     return EventType.teens.name;
   }
 
+  bool sharing = false;
+  Future<bool> share(String path) async {
+    sharing = true;
+    final params = ShareParams(
+      files: [XFile(path)],
+    );
+
+    final result = await SharePlus.instance.share(params);
+    sharing = false;
+
+    return result.status == ShareResultStatus.success;
+  }
+
   @override
   Widget build(BuildContext context) {
-    debugPrint('deventaDDED build ${widget.eventModel.imagePaths.length}');
-
+    final screenSize = MediaQuery.sizeOf(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('جزئیات برنامه'),
@@ -36,7 +52,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               context.navigatorPush(AddEventScreen(
                   eventToUpdate: eventModelNotifier.value,
                   onAdded: (postedEvent) {
-                    debugPrint('deventaDDED listener ${postedEvent.imagePaths.length}');
+                    widget.onUpdated?.call();
                     eventModelNotifier.value = postedEvent;
                   }));
             },
@@ -66,7 +82,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       eventValue.title,
                       style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
                     ),
-                    _chip(context, 'بخش: ${getEventType(eventValue.type)}'),
                     Text('توضحیات', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
                     if (eventValue.desc.isEmpty)
                       Center(child: _chip(context, 'توضیحاتی درباره این محصول وجود ندارد!'))
@@ -81,8 +96,48 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         if (eventValue.tools.isEmpty) Center(child: _chip(context, 'هیچ ابزاری هنوز اضافه نشده!')),
                       ],
                     ),
-                    if (created != null) _chip(context, 'ایجاد:  ${DateUtilsFa.dateYmd(created)} - ${DateUtilsFa.timeHm(created)}'),
-                    if (showEdited) _chip(context, 'آخرین ویرایش: ${DateUtilsFa.dateYmd(updated)} - ${DateUtilsFa.timeHm(updated)}'),
+                    if (created != null) Text('ایجاد:  ${DateUtilsFa.dateYmd(created)} - ${DateUtilsFa.timeHm(created)}'),
+                    if (showEdited) Text('آخرین ویرایش: ${DateUtilsFa.dateYmd(updated)} - ${DateUtilsFa.timeHm(updated)}'),
+                    Text('ضمیمه ها', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+                    ...eventValue.attachments.map((attachment) {
+                      final path = attachment.path;
+                      final startOfAbsolutePath = path.indexOf('/0/');
+                      final strippedPath = path.substring(startOfAbsolutePath);
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: InkWell(
+                          onTap: () {
+                            share(attachment.path);
+                          },
+                          child: Column(
+                            children: [
+                              Row(spacing: 5, children: [
+                                AttachmentWidgetWithType(attachment.dataType),
+                                Column(
+                                  children: [
+                                    Text(
+                                      '${attachment.name}.${attachment.dataType}',
+                                      maxLines: 1,
+                                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+                                    ),
+                                  ],
+                                ),
+                                const Spacer(),
+                                const Icon(Icons.share_rounded, color: Colors.grey),
+                              ]),
+                              SizedBox(
+                                  width: screenSize.width * 0.95,
+                                  child: Text(
+                                    strippedPath,
+                                    maxLines: 2,
+                                    textDirection: TextDirection.ltr,
+                                  )),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ],
                 ),
               ),

@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 import 'package:events/core/providers/local_image_provider.dart';
+import 'package:events/features/events/model/attachments_model.dart';
 import 'package:events/features/events/model/event_model.dart';
 import 'package:events/objectbox.g.dart';
 
@@ -12,7 +13,7 @@ class EventRepository {
     final query = eventBox.query().build();
     final events = query.find();
     query.close();
-    developer.log('data base lenght is: ${events.length}');
+    developer.log('data base length is: ${events.length}');
     return events;
   }
 
@@ -50,17 +51,33 @@ class EventRepository {
     for (var i = 0; i < images.length; i++) {
       final imageUrl = images[i];
       if (_isRemote(imageUrl)) {
-        final imagePath = await localImageProvider.save(imageUrl);
+        final imagePath = await localImageProvider.saveImage(imageUrl);
         images[i] = imagePath;
       }
     }
     return images;
   }
 
+  Future<List<AttachmentsModel>> _storeAttachments(List<AttachmentsModel> attachments) async {
+    final attachmentsList = List<AttachmentsModel>.from(attachments);
+
+    for (var i = 0; i < attachmentsList.length; i++) {
+      final attachmentUrl = attachmentsList[i].path;
+      if (_isRemote(attachmentUrl)) {
+        final savedAttachmentPath = await localImageProvider.saveAttachment(attachmentUrl);
+        attachmentsList[i] = attachmentsList[i].copyWith(path: savedAttachmentPath);
+      }
+    }
+    return attachmentsList;
+  }
+
   Future<EventModel> _updateEventImages(EventModel event) async {
     final storedImages = await _storeImages(event.imagePaths);
-    final updatedEvent = event.copyWith(imagePaths: storedImages);
-    developer.log('saving image: ${event.title} ${updatedEvent.imagePaths}');
+    final storedAttachments = await _storeAttachments(event.attachments);
+    final encodedAttachments = AttachmentsModel.encodeAttachments(storedAttachments);
+
+    final updatedEvent = event.copyWith(imagePaths: storedImages, dbAttachment: encodedAttachments);
+    developer.log('saving image: ${event.title} image: ${updatedEvent.imagePaths}, attachments: ${updatedEvent.dbAttachment}');
     return updatedEvent;
   }
 }

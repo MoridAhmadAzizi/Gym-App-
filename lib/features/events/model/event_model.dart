@@ -1,3 +1,4 @@
+import 'package:events/features/events/model/attachments_model.dart';
 import 'package:objectbox/objectbox.dart';
 
 enum EventStatus {
@@ -30,21 +31,19 @@ class EventModel {
   int id;
 
   final String title;
-
   final int type;
-
-  /// `description` column in Supabase.
   final String desc;
-
-  /// `tools` column in Supabase.
   final List<String> tools;
-
-  /// Public URLs (online) or local file paths (offline drafts).
-  /// In Supabase the column is `image_paths`.
   final List<String> imagePaths;
+  @Property(type: PropertyType.date)
   final DateTime? createdAt;
+  @Property(type: PropertyType.date)
   final DateTime? updatedAt;
   final int status;
+  final String dbAttachment;
+
+  @Transient()
+  List<AttachmentsModel> attachments = <AttachmentsModel>[];
 
   EventModel({
     this.id = 0,
@@ -54,9 +53,15 @@ class EventModel {
     this.status = 0,
     this.tools = const [],
     this.imagePaths = const [],
+    this.dbAttachment = '',
     this.createdAt,
     this.updatedAt,
-  });
+  }) {
+    if (dbAttachment.isNotEmpty) {
+      attachments = AttachmentsModel.decodeAttachments(dbAttachment);
+    }
+  }
+
   static EventModel get empty => EventModel();
   EventModel copyWith({
     int? id,
@@ -65,8 +70,8 @@ class EventModel {
     String? desc,
     int? type,
     List<String>? tools,
-
     List<String>? imagePaths,
+    String? dbAttachment,
     DateTime? createdAt,
     DateTime? updatedAt,
     int? status,
@@ -78,6 +83,7 @@ class EventModel {
       desc: desc ?? this.desc,
       tools: tools ?? this.tools,
       imagePaths: imagePaths ?? this.imagePaths,
+      dbAttachment: dbAttachment ?? this.dbAttachment,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       status: status ?? this.status,
@@ -90,7 +96,6 @@ class EventModel {
     return DateTime.tryParse(v.toString());
   }
 
-  /// Map from Supabase row -> Product.
   factory EventModel.formJson(Map<String, dynamic> json) {
     return EventModel(
       id: json['id'],
@@ -99,22 +104,10 @@ class EventModel {
       desc: (json['description'] ?? '').toString(),
       tools: List<String>.from(json['tools'] ?? const <String>[]),
       imagePaths: List<String>.from(json['image_paths'] ?? const <String>[]),
+      dbAttachment: (json['attachments'] ?? '') as String,
       createdAt: _parseDate(json['created_at']),
       updatedAt: _parseDate(json['updated_at']),
       status: (json['status'] ?? 0) as int,
     );
-  }
-
-  /// Map for Supabase insert/update.
-  /// NOTE: do NOT send owner_id; triggers set/lock it.
-  Map<String, dynamic> toMap() {
-    return {
-      'title': title,
-      'description': desc,
-      'type': type,
-      'tools': tools,
-      'image_paths': imagePaths,
-      'status': status,
-    };
   }
 }
