@@ -30,7 +30,7 @@ class TabsWidget extends StatelessWidget {
               icon: Icons.add,
               onTap: () {
                 if (onNewEventAdded == null) {
-                  context.navigatorPushAndRemoveUntil(const LoginPage());
+                  context.navigatorPush(const LoginPage());
                   return;
                 }
                 context.navigatorPush(AddEventScreen(onAdded: onNewEventAdded));

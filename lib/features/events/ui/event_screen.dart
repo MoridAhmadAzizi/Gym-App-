@@ -1,7 +1,6 @@
 import 'package:events/core/extension/navigator_extension.dart';
 import 'package:events/core/widgets/cached_image.dart';
 import 'package:events/features/auth/services/auth_service.dart';
-import 'package:events/features/auth/ui/login_page.dart';
 import 'package:events/features/events/cubit/event_cubit.dart';
 import 'package:events/features/events/model/event_model.dart';
 import 'package:events/features/events/repository/event_repository.dart';
@@ -47,7 +46,7 @@ class _EventScreenState extends State<EventScreen> {
         ),
       );
       AuthService(supabase).signOut();
-      context.navigatorPushAndRemoveUntil(const LoginPage());
+      context.navigatorPushAndRemoveUntil(const EventScreen());
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

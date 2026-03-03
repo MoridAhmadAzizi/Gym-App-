@@ -1,4 +1,3 @@
-// lib/screens/login_or_register.dart
 import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'register_page.dart';
