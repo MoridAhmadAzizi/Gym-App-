@@ -1,4 +1,4 @@
-package com.example.wahab
+package com.tahzib.events
 
 import io.flutter.embedding.android.FlutterActivity
 

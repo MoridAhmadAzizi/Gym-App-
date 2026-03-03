@@ -10,6 +10,7 @@ import 'core/repository/database_repository.dart';
 import 'core/services/main_cach_manager.dart';
 import 'supabase_config.dart';
 
+const appVersion = '1.0.0';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

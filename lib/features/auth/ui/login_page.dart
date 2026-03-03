@@ -3,6 +3,7 @@ import 'package:events/core/widgets/my_button.dart';
 import 'package:events/core/widgets/my_text_field.dart';
 import 'package:events/features/auth/services/auth_service.dart';
 import 'package:events/features/events/ui/event_screen.dart';
+import 'package:events/main.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -155,6 +156,11 @@ class _LoginPageState extends State<LoginPage> {
               //     // ),
               //   ],
               // ),
+
+              const Align(
+                alignment: Alignment.bottomCenter,
+                child: Text(appVersion),
+              )
             ],
           ),
         ),
