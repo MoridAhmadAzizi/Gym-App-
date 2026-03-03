@@ -24,27 +24,8 @@ class DatabaseRepository {
       }
     }
     final databaseRepository = DatabaseRepository._(_databaseStore!, localImageProvider);
-    // databaseRepository.fetchData();
     return databaseRepository;
   }
 
   EventRepository getEventRepository() => EventRepository(_databaseStore!.box(), localImageProvider);
-
-  // Stream<List<EventModel>> watchAllProducts() {
-  //   final controller = StreamController<List<EventModel>>();
-  //   Query<EventModel>? q;
-  //
-  //   final sub = productBox.query().watch(triggerImmediately: true).listen((query) {
-  //     q ??= query;
-  //     controller.add(query.find());
-  //   }, onError: controller.addError);
-  //
-  //   controller.onCancel = () async {
-  //     await sub.cancel();
-  //     q?.close();
-  //     await controller.close();
-  //   };
-  //
-  //   return controller.stream;
-  // }
 }

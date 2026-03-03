@@ -68,7 +68,7 @@ class _EventScreenState extends State<EventScreen> {
       appBar: AppBar(
         title: const Text('صفحه برنامه ها'),
         actions: [
-          if (!kDebugMode)
+          if (kDebugMode)
             InkWell(
               onTap: () async {
                 await eventServices.deleteAll();
