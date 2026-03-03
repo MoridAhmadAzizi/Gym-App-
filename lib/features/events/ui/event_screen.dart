@@ -164,8 +164,11 @@ class EventsList extends StatelessWidget {
 
         return ListView.builder(
             itemCount: events.length,
-            itemBuilder: (context, index) {
+            itemBuilder: (_, index) {
               return EventCard(
+                onUpdated: () {
+                  context.read<EventCubit>().reload();
+                },
                 eventModel: events[index],
               );
             });
@@ -178,8 +181,9 @@ class EventsList extends StatelessWidget {
 }
 
 class EventCard extends StatelessWidget {
-  const EventCard({super.key, required this.eventModel});
+  const EventCard({super.key, this.onUpdated, required this.eventModel});
   final EventModel eventModel;
+  final VoidCallback? onUpdated;
 
   Widget thumb() {
     final firstImage = eventModel.imagePaths.isEmpty ? '' : eventModel.imagePaths.first;
@@ -202,9 +206,7 @@ class EventCard extends StatelessWidget {
             MaterialPageRoute(
                 builder: (context) => EventDetailScreen(
                       eventModel: eventModel,
-                      onUpdated: () {
-                        context.read<EventCubit>().reload();
-                      },
+                      onUpdated: onUpdated?.call,
                     )));
       },
       child: Padding(

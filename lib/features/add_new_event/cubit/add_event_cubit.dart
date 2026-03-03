@@ -118,22 +118,15 @@ class AddEventCubit extends Cubit<AddEventState> {
     emit(EventUpdating(updatedEvent));
   }
 
-  Future<void> submitForm({
-    String title = '',
-    String description = '',
-    bool isEditing = false,
-  }) async {
+  Future<void> submitForm({String title = '', String description = '', bool isEditing = false}) async {
     if (title.isEmpty) {
       emit(EventAddingFailed('لطفاً نام برنامه را وارد کنید', stateEvent));
-
       return;
     }
     final newEvent = stateEvent.copyWith(title: title, desc: description);
 
     emit(EventPosting(newEvent));
-
     saving = true;
-
     try {
       EventModel? postedEvent;
       if (isEditing) {
@@ -145,7 +138,6 @@ class AddEventCubit extends Cubit<AddEventState> {
       if (postedEvent == null) {
         emit(EventAddingFailed('ثبت برنامه ثبت نشد، دوباره سعی کنید!', stateEvent));
         saving = false;
-
         return;
       }
       emit(EventPostingSuccess('برنامه موفقانه اضافه شد!', stateEvent));
