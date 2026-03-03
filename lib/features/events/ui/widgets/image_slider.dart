@@ -49,15 +49,30 @@ class _ImageSliderState extends State<ImageSlider> {
       children: [
         CarouselSlider(
           disableGesture: !(widget.images.length > 1),
-          items: widget.images
-              .map((url) => ColoredBox(
-                    color: Colors.red,
-                    child: _ImageItem(
-                      key: ValueKey(url),
-                      imagePath: url,
+          items: widget.images.asMap().entries.map((entry) {
+            final index = entry.key;
+            final url = entry.value;
+
+            return GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => FullScreenImageViewer(
+                      images: widget.images,
+                      initialIndex: index,
                     ),
-                  ))
-              .toList(),
+                  ),
+                );
+              },
+              child: ColoredBox(
+                color: Colors.red,
+                child: _ImageItem(
+                  key: ValueKey(url),
+                  imagePath: url,
+                ),
+              ),
+            );
+          }).toList(),
           options: CarouselOptions(
             aspectRatio: 16 / 9,
             autoPlay: widget.images.length > 1,
@@ -103,6 +118,85 @@ class _ImageSliderState extends State<ImageSlider> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class FullScreenImageViewer extends StatefulWidget {
+  const FullScreenImageViewer({
+    super.key,
+    required this.images,
+    required this.initialIndex,
+  });
+
+  final List<String> images;
+  final int initialIndex;
+
+  @override
+  State<FullScreenImageViewer> createState() => _FullScreenImageViewerState();
+}
+
+class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
+  late final PageController _controller;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _controller = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _controller,
+            itemCount: widget.images.length,
+            onPageChanged: (index) {
+              setState(() => _currentIndex = index);
+            },
+            itemBuilder: (context, index) {
+              return InteractiveViewer(
+                minScale: 1,
+                maxScale: 4,
+                child: Center(
+                  child: CachedImage(
+                    url: widget.images[index],
+                  ),
+                ),
+              );
+            },
+          ),
+
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10,
+            right: 10,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+
+          Positioned(
+            bottom: 20,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Text(
+                "${_currentIndex + 1} / ${widget.images.length}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
