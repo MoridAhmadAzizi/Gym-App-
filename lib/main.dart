@@ -1,18 +1,16 @@
+import 'package:events/core/providers/local_image_provider.dart';
+import 'package:events/core/providers/remote_image_provider.dart';
+import 'package:events/router.dart';
+import 'package:file/local.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'app_theme.dart';
-import 'controllers/auth_controller.dart';
-import 'controllers/product_controller.dart';
-import 'objectbox/objectbox.dart';
-import 'screens/home.dart';
-import 'screens/login_or_register.dart';
-import 'services/auth_service.dart';
-import 'services/product_repo.dart';
-import 'services/profile_repo.dart';
+import 'core/repository/database_repository.dart';
+import 'core/services/main_cach_manager.dart';
 import 'supabase_config.dart';
 
+const appVersion = '1.0.0';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -21,63 +19,26 @@ Future<void> main() async {
     anonKey: SupabaseConfig.anonKey,
   );
 
-  final ob = await ObjectBoxApp.create();
-  final client = Supabase.instance.client;
+  final router = AppRouter().buildRoutes();
+  final remoteImageProvider = RemoteImageProvider(cacheManager: MainCacheManager());
+  final localImageProvider = LocalImageProvider.fileSystem(const LocalFileSystem(), remoteImageProvider);
+  final databaseRepository = await DatabaseRepository.create(localImageProvider);
 
-  // Services / Repos
-  Get.put<AuthService>(AuthService(client), permanent: true);
-  Get.put<ProfileRepo>(ProfileRepo(client), permanent: true);
-  Get.put<ProductRepo>(ProductRepo(client: client, objectBox: ob), permanent: true);
-
-  // Controllers
-  Get.put<AuthController>(
-    AuthController(auth: Get.find<AuthService>(), profiles: Get.find<ProfileRepo>()),
-    permanent: true,
+  runApp(
+    MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider.value(value: databaseRepository),
+        RepositoryProvider.value(value: databaseRepository.getEventRepository()),
+        RepositoryProvider.value(value: localImageProvider),
+      ],
+      child: MaterialApp.router(
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+        title: 'برنامه ها',
+        theme: AppTheme.light(),
+        locale: const Locale('fa', 'IR'),
+        builder: (context, child) => Directionality(textDirection: TextDirection.rtl, child: child ?? const SizedBox()),
+      ),
+    ),
   );
-  Get.put<ProductController>(
-    ProductController(Get.find<ProductRepo>()),
-    permanent: true,
-  );
-
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return GetMaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Wahab',
-      theme: AppTheme.light(),
-      locale: const Locale('fa', 'IR'),
-      builder: (context, child) =>
-          Directionality(textDirection: TextDirection.rtl, child: child ?? const SizedBox()),
-      home: const _Root(),
-    );
-  }
-}
-
-class _Root extends StatelessWidget {
-  const _Root();
-
-  @override
-  Widget build(BuildContext context) {
-    final ac = Get.find<AuthController>();
-
-    return Obx(() {
-      if (ac.isLoading.value) {
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
-      }
-
-      // اگر لاگین نیست => لاگین
-      if (!ac.isAuthenticated) {
-        return const LoginOrRegister();
-      }
-
-      // اگر لاگین هست => هوم
-      return const Home();
-    });
-  }
 }

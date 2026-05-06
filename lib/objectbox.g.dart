@@ -14,124 +14,75 @@ import 'package:objectbox/internal.dart'
 import 'package:objectbox/objectbox.dart' as obx;
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
-import 'objectbox/product_entity.dart';
-import 'objectbox/product_image_entity.dart';
+import 'features/events/model/event_model.dart';
 
 export 'package:objectbox/objectbox.dart'; // so that callers only have to import this file
 
 final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
-    id: const obx_int.IdUid(1, 6393634065084584965),
-    name: 'ProductEntity',
-    lastPropertyId: const obx_int.IdUid(22, 1132662813978316544),
+    id: const obx_int.IdUid(1, 2006261101140995514),
+    name: 'EventModel',
+    lastPropertyId: const obx_int.IdUid(12, 1739302062051705700),
     flags: 0,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(1, 2300918573255082728),
-        name: 'obId',
+        id: const obx_int.IdUid(1, 835777748264011980),
+        name: 'id',
         type: 6,
-        flags: 1,
+        flags: 129,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(3, 5940906248992659699),
+        id: const obx_int.IdUid(2, 3295764467579825014),
         name: 'title',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(4, 8269862436780686006),
-        name: 'group',
+        id: const obx_int.IdUid(4, 7364585886307205691),
+        name: 'desc',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(6, 1383092311999833631),
-        name: 'tools',
-        type: 30,
-        flags: 0,
-      ),
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(7, 3856719868647136951),
+        id: const obx_int.IdUid(5, 7247623852929078737),
         name: 'imagePaths',
         type: 30,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(8, 4608265219138738634),
-        name: 'createdAtMs',
+        id: const obx_int.IdUid(6, 7542844984979312469),
+        name: 'tools',
+        type: 30,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 489287270241432582),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(8, 1385311369094534048),
+        name: 'updatedAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 2921592406769504122),
+        name: 'type',
         type: 6,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(9, 5007054384082180739),
-        name: 'updatedAtMs',
+        id: const obx_int.IdUid(10, 358585546820936239),
+        name: 'status',
         type: 6,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(12, 755765851379316266),
-        name: 'description',
+        id: const obx_int.IdUid(12, 1739302062051705700),
+        name: 'dbAttachment',
         type: 9,
-        flags: 0,
-      ),
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(13, 5056162910351239549),
-        name: 'toolsJson',
-        type: 9,
-        flags: 0,
-      ),
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(14, 8342622635637120733),
-        name: 'imagePathsJson',
-        type: 9,
-        flags: 0,
-      ),
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(21, 1455209405643878324),
-        name: 'id',
-        type: 9,
-        flags: 2080,
-        indexId: const obx_int.IdUid(8, 991441405569826948),
-      ),
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(22, 1132662813978316544),
-        name: 'isDirty',
-        type: 1,
-        flags: 0,
-      ),
-    ],
-    relations: <obx_int.ModelRelation>[
-      obx_int.ModelRelation(
-        id: const obx_int.IdUid(4, 3825000397718416616),
-        name: 'images',
-        targetId: const obx_int.IdUid(2, 6798172890663994946),
-      ),
-    ],
-    backlinks: <obx_int.ModelBacklink>[],
-  ),
-  obx_int.ModelEntity(
-    id: const obx_int.IdUid(2, 6798172890663994946),
-    name: 'ProductImageEntity',
-    lastPropertyId: const obx_int.IdUid(3, 8541179439823808234),
-    flags: 0,
-    properties: <obx_int.ModelProperty>[
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(1, 241555931658171020),
-        name: 'obId',
-        type: 6,
-        flags: 1,
-      ),
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(2, 733794576294248886),
-        name: 'key',
-        type: 9,
-        flags: 2048,
-        indexId: const obx_int.IdUid(2, 4482858388215303397),
-      ),
-      obx_int.ModelProperty(
-        id: const obx_int.IdUid(3, 8541179439823808234),
-        name: 'bytes',
-        type: 23,
         flags: 0,
       ),
     ],
@@ -178,192 +129,117 @@ Future<obx.Store> openStore({
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(2, 6798172890663994946),
-    lastIndexId: const obx_int.IdUid(8, 991441405569826948),
-    lastRelationId: const obx_int.IdUid(4, 3825000397718416616),
+    lastEntityId: const obx_int.IdUid(1, 2006261101140995514),
+    lastIndexId: const obx_int.IdUid(0, 0),
+    lastRelationId: const obx_int.IdUid(0, 0),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
-    retiredIndexUids: const [
-      2002207992160916427,
-      8679784319883672849,
-      7474941581539515418,
-      8964885818835525835,
-      3581919160989929613,
-      6886728735377376614,
-    ],
-    retiredPropertyUids: const [
-      8802302739639446131,
-      5964231682117815840,
-      1140867336874532647,
-      4042665561352495720,
-      5169526714075081934,
-      7797874375361365240,
-      1467947136272157926,
-      7062926609661586230,
-      68554073085096292,
-      6491563542059344784,
-    ],
-    retiredRelationUids: const [
-      2199856507267009753,
-      3944794487697887128,
-      1416576572525953888,
-    ],
+    retiredIndexUids: const [],
+    retiredPropertyUids: const [5643504947583391236, 2234754668426064645],
+    retiredRelationUids: const [],
     modelVersion: 5,
     modelVersionParserMinimum: 5,
     version: 1,
   );
 
   final bindings = <Type, obx_int.EntityDefinition>{
-    ProductEntity: obx_int.EntityDefinition<ProductEntity>(
+    EventModel: obx_int.EntityDefinition<EventModel>(
       model: _entities[0],
-      toOneRelations: (ProductEntity object) => [],
-      toManyRelations: (ProductEntity object) => {
-        obx_int.RelInfo<ProductEntity>.toMany(4, object.obId): object.images,
+      toOneRelations: (EventModel object) => [],
+      toManyRelations: (EventModel object) => {},
+      getId: (EventModel object) => object.id,
+      setId: (EventModel object, int id) {
+        object.id = id;
       },
-      getId: (ProductEntity object) => object.obId,
-      setId: (ProductEntity object, int id) {
-        object.obId = id;
-      },
-      objectToFB: (ProductEntity object, fb.Builder fbb) {
+      objectToFB: (EventModel object, fb.Builder fbb) {
         final titleOffset = fbb.writeString(object.title);
-        final groupOffset = fbb.writeString(object.group);
-        final toolsOffset = fbb.writeList(
-          object.tools.map(fbb.writeString).toList(growable: false),
-        );
+        final descOffset = fbb.writeString(object.desc);
         final imagePathsOffset = fbb.writeList(
           object.imagePaths.map(fbb.writeString).toList(growable: false),
         );
-        final descriptionOffset = fbb.writeString(object.description);
-        final toolsJsonOffset = fbb.writeString(object.toolsJson);
-        final imagePathsJsonOffset = fbb.writeString(object.imagePathsJson);
-        final idOffset = fbb.writeString(object.id);
-        fbb.startTable(23);
-        fbb.addInt64(0, object.obId);
-        fbb.addOffset(2, titleOffset);
-        fbb.addOffset(3, groupOffset);
+        final toolsOffset = fbb.writeList(
+          object.tools.map(fbb.writeString).toList(growable: false),
+        );
+        final dbAttachmentOffset = fbb.writeString(object.dbAttachment);
+        fbb.startTable(13);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, titleOffset);
+        fbb.addOffset(3, descOffset);
+        fbb.addOffset(4, imagePathsOffset);
         fbb.addOffset(5, toolsOffset);
-        fbb.addOffset(6, imagePathsOffset);
-        fbb.addInt64(7, object.createdAtMs);
-        fbb.addInt64(8, object.updatedAtMs);
-        fbb.addOffset(11, descriptionOffset);
-        fbb.addOffset(12, toolsJsonOffset);
-        fbb.addOffset(13, imagePathsJsonOffset);
-        fbb.addOffset(20, idOffset);
-        fbb.addBool(21, object.isDirty);
+        fbb.addInt64(6, object.createdAt?.millisecondsSinceEpoch);
+        fbb.addInt64(7, object.updatedAt?.millisecondsSinceEpoch);
+        fbb.addInt64(8, object.type);
+        fbb.addInt64(9, object.status);
+        fbb.addOffset(11, dbAttachmentOffset);
         fbb.finish(fbb.endTable());
-        return object.obId;
+        return object.id;
       },
       objectFromFB: (obx.Store store, ByteData fbData) {
         final buffer = fb.BufferContext(fbData);
         final rootOffset = buffer.derefObject(0);
-        final obIdParam = const fb.Int64Reader().vTableGet(
+        final createdAtValue = const fb.Int64Reader().vTableGetNullable(
           buffer,
           rootOffset,
-          4,
-          0,
+          16,
         );
-        final idParam = const fb.StringReader(
-          asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 44, '');
-        final titleParam = const fb.StringReader(
-          asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 8, '');
-        final groupParam = const fb.StringReader(
-          asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 10, '');
-        final descriptionParam = const fb.StringReader(
-          asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 26, '');
-        final toolsJsonParam = const fb.StringReader(
-          asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 28, '');
-        final imagePathsJsonParam = const fb.StringReader(
-          asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 30, '');
-        final createdAtMsParam = const fb.Int64Reader().vTableGetNullable(
+        final updatedAtValue = const fb.Int64Reader().vTableGetNullable(
           buffer,
           rootOffset,
           18,
         );
-        final updatedAtMsParam = const fb.Int64Reader().vTableGetNullable(
-          buffer,
-          rootOffset,
-          20,
-        );
-        final isDirtyParam = const fb.BoolReader().vTableGet(
-          buffer,
-          rootOffset,
-          46,
-          false,
-        );
-        final object =
-            ProductEntity(
-                obId: obIdParam,
-                id: idParam,
-                title: titleParam,
-                group: groupParam,
-                description: descriptionParam,
-                toolsJson: toolsJsonParam,
-                imagePathsJson: imagePathsJsonParam,
-                createdAtMs: createdAtMsParam,
-                updatedAtMs: updatedAtMsParam,
-                isDirty: isDirtyParam,
-              )
-              ..tools = const fb.ListReader<String>(
-                fb.StringReader(asciiOptimization: true),
-                lazy: false,
-              ).vTableGet(buffer, rootOffset, 14, [])
-              ..imagePaths = const fb.ListReader<String>(
-                fb.StringReader(asciiOptimization: true),
-                lazy: false,
-              ).vTableGet(buffer, rootOffset, 16, []);
-        obx_int.InternalToManyAccess.setRelInfo<ProductEntity>(
-          object.images,
-          store,
-          obx_int.RelInfo<ProductEntity>.toMany(4, object.obId),
-        );
-        return object;
-      },
-    ),
-    ProductImageEntity: obx_int.EntityDefinition<ProductImageEntity>(
-      model: _entities[1],
-      toOneRelations: (ProductImageEntity object) => [],
-      toManyRelations: (ProductImageEntity object) => {},
-      getId: (ProductImageEntity object) => object.obId,
-      setId: (ProductImageEntity object, int id) {
-        object.obId = id;
-      },
-      objectToFB: (ProductImageEntity object, fb.Builder fbb) {
-        final keyOffset = fbb.writeString(object.key);
-        final bytesOffset = fbb.writeListInt8(object.bytes);
-        fbb.startTable(4);
-        fbb.addInt64(0, object.obId);
-        fbb.addOffset(1, keyOffset);
-        fbb.addOffset(2, bytesOffset);
-        fbb.finish(fbb.endTable());
-        return object.obId;
-      },
-      objectFromFB: (obx.Store store, ByteData fbData) {
-        final buffer = fb.BufferContext(fbData);
-        final rootOffset = buffer.derefObject(0);
-        final obIdParam = const fb.Int64Reader().vTableGet(
+        final idParam = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
           4,
           0,
         );
-        final keyParam = const fb.StringReader(
+        final titleParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 6, '');
-        final bytesParam =
-            const fb.Uint8ListReader(
-                  lazy: false,
-                ).vTableGet(buffer, rootOffset, 8, Uint8List(0))
-                as Uint8List;
-        final object = ProductImageEntity(
-          obId: obIdParam,
-          key: keyParam,
-          bytes: bytesParam,
+        final typeParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          20,
+          0,
+        );
+        final descParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 10, '');
+        final statusParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          22,
+          0,
+        );
+        final toolsParam = const fb.ListReader<String>(
+          fb.StringReader(asciiOptimization: true),
+          lazy: false,
+        ).vTableGet(buffer, rootOffset, 14, []);
+        final imagePathsParam = const fb.ListReader<String>(
+          fb.StringReader(asciiOptimization: true),
+          lazy: false,
+        ).vTableGet(buffer, rootOffset, 12, []);
+        final dbAttachmentParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 26, '');
+        final createdAtParam = createdAtValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(createdAtValue);
+        final updatedAtParam = updatedAtValue == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(updatedAtValue);
+        final object = EventModel(
+          id: idParam,
+          title: titleParam,
+          type: typeParam,
+          desc: descParam,
+          status: statusParam,
+          tools: toolsParam,
+          imagePaths: imagePathsParam,
+          dbAttachment: dbAttachmentParam,
+          createdAt: createdAtParam,
+          updatedAt: updatedAtParam,
         );
 
         return object;
@@ -374,89 +250,55 @@ obx_int.ModelDefinition getObjectBoxModel() {
   return obx_int.ModelDefinition(model, bindings);
 }
 
-/// [ProductEntity] entity fields to define ObjectBox queries.
-class ProductEntity_ {
-  /// See [ProductEntity.obId].
-  static final obId = obx.QueryIntegerProperty<ProductEntity>(
+/// [EventModel] entity fields to define ObjectBox queries.
+class EventModel_ {
+  /// See [EventModel.id].
+  static final id = obx.QueryIntegerProperty<EventModel>(
     _entities[0].properties[0],
   );
 
-  /// See [ProductEntity.title].
-  static final title = obx.QueryStringProperty<ProductEntity>(
+  /// See [EventModel.title].
+  static final title = obx.QueryStringProperty<EventModel>(
     _entities[0].properties[1],
   );
 
-  /// See [ProductEntity.group].
-  static final group = obx.QueryStringProperty<ProductEntity>(
+  /// See [EventModel.desc].
+  static final desc = obx.QueryStringProperty<EventModel>(
     _entities[0].properties[2],
   );
 
-  /// See [ProductEntity.tools].
-  static final tools = obx.QueryStringVectorProperty<ProductEntity>(
+  /// See [EventModel.imagePaths].
+  static final imagePaths = obx.QueryStringVectorProperty<EventModel>(
     _entities[0].properties[3],
   );
 
-  /// See [ProductEntity.imagePaths].
-  static final imagePaths = obx.QueryStringVectorProperty<ProductEntity>(
+  /// See [EventModel.tools].
+  static final tools = obx.QueryStringVectorProperty<EventModel>(
     _entities[0].properties[4],
   );
 
-  /// See [ProductEntity.createdAtMs].
-  static final createdAtMs = obx.QueryIntegerProperty<ProductEntity>(
+  /// See [EventModel.createdAt].
+  static final createdAt = obx.QueryDateProperty<EventModel>(
     _entities[0].properties[5],
   );
 
-  /// See [ProductEntity.updatedAtMs].
-  static final updatedAtMs = obx.QueryIntegerProperty<ProductEntity>(
+  /// See [EventModel.updatedAt].
+  static final updatedAt = obx.QueryDateProperty<EventModel>(
     _entities[0].properties[6],
   );
 
-  /// See [ProductEntity.description].
-  static final description = obx.QueryStringProperty<ProductEntity>(
+  /// See [EventModel.type].
+  static final type = obx.QueryIntegerProperty<EventModel>(
     _entities[0].properties[7],
   );
 
-  /// See [ProductEntity.toolsJson].
-  static final toolsJson = obx.QueryStringProperty<ProductEntity>(
+  /// See [EventModel.status].
+  static final status = obx.QueryIntegerProperty<EventModel>(
     _entities[0].properties[8],
   );
 
-  /// See [ProductEntity.imagePathsJson].
-  static final imagePathsJson = obx.QueryStringProperty<ProductEntity>(
+  /// See [EventModel.dbAttachment].
+  static final dbAttachment = obx.QueryStringProperty<EventModel>(
     _entities[0].properties[9],
-  );
-
-  /// See [ProductEntity.id].
-  static final id = obx.QueryStringProperty<ProductEntity>(
-    _entities[0].properties[10],
-  );
-
-  /// See [ProductEntity.isDirty].
-  static final isDirty = obx.QueryBooleanProperty<ProductEntity>(
-    _entities[0].properties[11],
-  );
-
-  /// see [ProductEntity.images]
-  static final images =
-      obx.QueryRelationToMany<ProductEntity, ProductImageEntity>(
-        _entities[0].relations[0],
-      );
-}
-
-/// [ProductImageEntity] entity fields to define ObjectBox queries.
-class ProductImageEntity_ {
-  /// See [ProductImageEntity.obId].
-  static final obId = obx.QueryIntegerProperty<ProductImageEntity>(
-    _entities[1].properties[0],
-  );
-
-  /// See [ProductImageEntity.key].
-  static final key = obx.QueryStringProperty<ProductImageEntity>(
-    _entities[1].properties[1],
-  );
-
-  /// See [ProductImageEntity.bytes].
-  static final bytes = obx.QueryByteVectorProperty<ProductImageEntity>(
-    _entities[1].properties[2],
   );
 }

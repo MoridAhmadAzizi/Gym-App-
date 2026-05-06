@@ -5,13 +5,7 @@ buildscript {
     }
 
     dependencies {
-        // Gradle plugin
         classpath("com.android.tools.build:gradle:8.1.4")
-        
-        // Google Services plugin برای Firebase
-        classpath("com.google.gms:google-services:4.4.0")
-        
-        // Kotlin Gradle plugin
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22")
     }
 }
@@ -23,7 +17,6 @@ allprojects {
     }
 }
 
-// تنظیمات build directory (کد شما)
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")

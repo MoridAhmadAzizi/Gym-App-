@@ -1,11 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     
-    <!-- اضافه کردن permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    
+
     <application
-        android:label="wahab"
+        android:label="برنامه ها"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         
@@ -41,12 +40,7 @@
             android:name="flutterEmbedding"
             android:value="2" />
             
-        <!-- اضافه کردن metadata برای Google Play Services -->
-        <meta-data
-            android:name="com.google.android.gms.version"
-            android:value="@integer/google_play_services_version" />
-            
-        <!-- برای Google Sign-In - اختیاری اما توصیه می‌شود -->
+
         <meta-data
             android:name="com.google.android.gms.auth.api.identity.SERVER_CLIENT_ID"
             android:value="536542631640-d4k7rvi84jedm3dblpsirri8mui71a93.apps.googleusercontent.com" />
@@ -63,9 +57,6 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
-        
-        <!-- اضافه کردن query برای Google Play Services -->
-        <package android:name="com.google.android.gms" />
         <package android:name="com.android.vending" />
     </queries>
     
